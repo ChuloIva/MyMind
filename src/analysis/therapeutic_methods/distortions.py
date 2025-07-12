@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import csv
-from ....common.config import settings
+from src.common.config import settings
 
 logger = logging.getLogger(__name__)
 

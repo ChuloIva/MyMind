@@ -1,11 +1,11 @@
 from sqlmodel import Field, SQLModel, Index, Relationship
-from sqlalchemy import JSON
+from sqlalchemy import JSON, Enum as SQLAlchemyEnum
 from uuid import UUID, uuid4
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from enum import Enum
 
-class SessionStatus(str, Enum):
+class SessionStatus(Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -24,7 +24,7 @@ class Session(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     client_id: UUID = Field(foreign_key="client.id")
     title: Optional[str] = None
-    status: SessionStatus = Field(default=SessionStatus.PENDING)
+    status: str = Field(default=SessionStatus.PENDING.value)
     audio_file_path: Optional[str] = None
     duration_seconds: Optional[float] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
