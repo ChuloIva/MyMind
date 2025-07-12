@@ -1,30 +1,30 @@
-from transformers import pipeline
+from langchain.chains import RetrievalQA
+from langchain.llms import OpenAI
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from uuid import UUID
 
-class SimpleRAG:
+def get_qa_chain(session_id: UUID):
     """
-    A simple Retrieval-Augmented Generation (RAG) class for question answering.
+    Placeholder function to get a RetrievalQA chain for a session.
+    In a real implementation, this would load data for the session.
     """
+    # Placeholder documents
+    documents = [
+        "The patient reported feeling anxious.",
+        "The patient has a history of panic attacks.",
+    ]
 
-    def __init__(self, documents):
-        """
-        Initializes the SimpleRAG with a list of documents.
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    texts = text_splitter.split_documents(documents)
 
-        Args:
-            documents: A list of strings, where each string is a document.
-        """
-        self.documents = documents
-        self.qa_pipeline = pipeline("question-answering")
-
-    def answer(self, question):
-        """
-        Answers a question based on the documents.
-
-        Args:
-            question: The question to answer.
-
-        Returns:
-            The answer to the question.
-        """
-        context = " ".join(self.documents)
-        result = self.qa_pipeline(question=question, context=context)
-        return result['answer']
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.from_documents(texts, embeddings)
+    
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=OpenAI(),
+        chain_type="stuff",
+        retriever=vectorstore.as_retriever(),
+    )
+    return qa_chain

@@ -1,12 +1,8 @@
-import whisper
-import sys
+from faster_whisper import WhisperModel
+from pathlib import Path
 
-if len(sys.argv) < 2:
-    print("Usage: python transcribe.py <path_to_audio_file>")
-    sys.exit(1)
+model = WhisperModel("large-v3", device="cuda", compute_type="float16")
 
-audio_file = sys.argv[1]
-
-model = whisper.load_model("base")
-result = model.transcribe(audio_file)
-print(result["text"])
+def transcribe(audio_path: Path) -> list[dict]:
+    segs, _ = model.transcribe(audio_path, beam_size=5, word_timestamps=True)
+    return [s._asdict() for s in segs]
