@@ -7,9 +7,10 @@ import logging
 import os
 from typing import Optional
 from datetime import datetime
+import re
 
 # Local imports
-from ...7_database.database import get_session
+from ...7_database.database import get_session, SessionLocal
 from ...7_database.models import Session as SessionModel, SessionSentence, SessionStatus
 from ...1_input_processing.speech_to_text.transcribe import transcribe_with_speakers
 from ...2_preprocessing.llm_processing.keyword_extraction import extract_session_keywords
@@ -17,6 +18,10 @@ from ...common.config import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/preprocess", tags=["preprocessing"])
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitize a filename to prevent security risks."""
+    return re.sub(r'[^a-zA-Z0-9._-]', '_', filename)
 
 @router.post("/upload-audio")
 async def upload_audio_file(
@@ -37,10 +42,11 @@ async def upload_audio_file(
     try:
         # Create session record
         session_id = uuid4()
+        sanitized_filename = sanitize_filename(file.filename)
         session = SessionModel(
             id=session_id,
             client_id=client_id or uuid4(),
-            title=file.filename,
+            title=sanitized_filename,
             status=SessionStatus.PROCESSING,
             created_at=datetime.utcnow()
         )
@@ -49,7 +55,7 @@ async def upload_audio_file(
         audio_dir = Path(settings.audio_upload_path)
         audio_dir.mkdir(parents=True, exist_ok=True)
         
-        file_extension = Path(file.filename).suffix
+        file_extension = Path(sanitized_filename).suffix
         audio_path = audio_dir / f"{session_id}{file_extension}"
         
         # Save uploaded file
@@ -192,64 +198,59 @@ async def process_transcription_background(
 ):
     """Background task for transcription and speaker diarization"""
     
+    from ...7_database.database import SessionLocal
     try:
-        # Initialize database session
-        from ...7_database.database import get_session
-        db = next(get_session())
-        
-        # Get session
-        session = db.get(SessionModel, session_id)
-        if not session:
-            logger.error(f"Session {session_id} not found")
-            return
-        
-        # Perform transcription with speaker diarization
-        result = transcribe_with_speakers(
-            audio_path=Path(audio_path),
-            hf_token=settings.hf_token,
-            whisper_model=settings.whisper_model,
-            device=settings.whisper_device,
-            num_speakers=num_speakers
-        )
-        
-        # Save transcription segments to database
-        combined_segments = result.get('combined_segments', [])
-        
-        for i, segment in enumerate(combined_segments):
-            sentence = SessionSentence(
-                session_id=session_id,
-                sentence_index=i,
-                start_ms=int(segment.get('start', 0) * 1000),
-                end_ms=int(segment.get('end', 0) * 1000),
-                speaker=segment.get('speaker', 'UNKNOWN'),
-                text=segment.get('text', ''),
-                confidence=segment.get('avg_logprob', 0)
+        with SessionLocal() as db:
+            # Get session
+            session = db.get(SessionModel, session_id)
+            if not session:
+                logger.error(f"Session {session_id} not found")
+                return
+            
+            # Perform transcription with speaker diarization
+            result = transcribe_with_speakers(
+                audio_path=Path(audio_path),
+                num_speakers=num_speakers
             )
-            db.add(sentence)
-        
-        # Update session
-        session.status = SessionStatus.COMPLETED
-        session.duration_seconds = max(
-            (seg.get('end', 0) for seg in combined_segments), 
-            default=0
-        )
-        db.add(session)
-        db.commit()
-        
-        logger.info(f"Transcription completed for session {session_id}")
-        
+            
+            # Save transcription segments to database
+            combined_segments = result.get('combined_segments', [])
+            
+            for i, segment in enumerate(combined_segments):
+                sentence = SessionSentence(
+                    session_id=session_id,
+                    sentence_index=i,
+                    start_ms=int(segment.get('start', 0) * 1000),
+                    end_ms=int(segment.get('end', 0) * 1000),
+                    speaker=segment.get('speaker', 'UNKNOWN'),
+                    text=segment.get('text', ''),
+                    confidence=segment.get('avg_logprob', 0)
+                )
+                db.add(sentence)
+            
+            # Update session
+            session.status = SessionStatus.COMPLETED
+            session.duration_seconds = max(
+                (seg.get('end', 0) for seg in combined_segments), 
+                default=0
+            )
+            db.add(session)
+            db.commit()
+            
+            logger.info(f"Transcription completed for session {session_id}")
+            
     except Exception as e:
         logger.error(f"Transcription background task failed: {e}")
-        
-        # Update session status to failed
-        try:
-            session = db.get(SessionModel, session_id)
-            if session:
-                session.status = SessionStatus.FAILED
-                db.add(session)
-                db.commit()
-        except:
-            pass
+        with SessionLocal() as db:
+            # Update session status to failed
+            try:
+                session = db.get(SessionModel, session_id)
+                if session:
+                    session.status = SessionStatus.FAILED
+                    db.add(session)
+                    db.commit()
+            except Exception as db_e:
+                logger.error(f"Failed to update session status to FAILED: {db_e}")
 
 async def process_keywords_background(
     session_id: UUID, 
@@ -257,45 +258,44 @@ async def process_keywords_background(
 ):
     """Background task for keyword extraction"""
     
+    from ...7_database.database import SessionLocal
     try:
-        from ...7_database.database import get_session
-        db = next(get_session())
-        
-        # Get session sentences
-        sentences = db.query(SessionSentence).filter(
-            SessionSentence.session_id == session_id
-        ).order_by(SessionSentence.sentence_index).all()
-        
-        if not sentences:
-            logger.error(f"No sentences found for session {session_id}")
-            return
-        
-        # Convert to format expected by keyword extractor
-        segments = []
-        for sentence in sentences:
-            segments.append({
-                'text': sentence.text,
-                'start': sentence.start_ms / 1000,
-                'end': sentence.end_ms / 1000,
-                'speaker': sentence.speaker
-            })
-        
-        # Extract keywords
-        from ...2_preprocessing.llm_processing.keyword_extraction import KeywordExtractor
-        extractor = KeywordExtractor(api_key=settings.openai_api_key)
-        processed_segments = extractor.extract_keywords_and_sentiment(segments, chunk_size)
-        
-        # Update database with keywords
-        for i, processed_segment in enumerate(processed_segments):
-            if i < len(sentences):
-                sentence = sentences[i]
-                sentence.keywords = processed_segment.get('keywords', [])
-                sentence.sentiment_scores = processed_segment.get('sentiment_scores', {})
-                db.add(sentence)
-        
-        db.commit()
-        logger.info(f"Keyword extraction completed for session {session_id}")
-        
+        with SessionLocal() as db:
+            # Get session sentences
+            sentences = db.query(SessionSentence).filter(
+                SessionSentence.session_id == session_id
+            ).order_by(SessionSentence.sentence_index).all()
+            
+            if not sentences:
+                logger.error(f"No sentences found for session {session_id}")
+                return
+            
+            # Convert to format expected by keyword extractor
+            segments = []
+            for sentence in sentences:
+                segments.append({
+                    'text': sentence.text,
+                    'start': sentence.start_ms / 1000,
+                    'end': sentence.end_ms / 1000,
+                    'speaker': sentence.speaker
+                })
+            
+            # Extract keywords
+            from ...2_preprocessing.llm_processing.keyword_extraction import KeywordExtractor
+            extractor = KeywordExtractor()
+            processed_segments = extractor.extract_keywords_and_sentiment(segments, chunk_size)
+            
+            # Update database with keywords
+            for i, processed_segment in enumerate(processed_segments):
+                if i < len(sentences):
+                    sentence = sentences[i]
+                    sentence.keywords = processed_segment.get('keywords', [])
+                    sentence.sentiment_scores = processed_segment.get('sentiment_scores', {})
+                    db.add(sentence)
+            
+            db.commit()
+            logger.info(f"Keyword extraction completed for session {session_id}")
+            
     except Exception as e:
         logger.error(f"Keyword extraction background task failed: {e}")
 

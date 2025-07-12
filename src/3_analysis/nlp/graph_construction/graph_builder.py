@@ -7,11 +7,12 @@ import logging
 from typing import List, Dict, Any, Optional, Tuple
 from openai import OpenAI
 import json
+from src.common.config import settings
 
 logger = logging.getLogger(__name__)
 
 class TherapeuticGraphBuilder:
-    def __init__(self, api_key: str = ""):
+    def __init__(self, api_key: str = settings.openai_api_key):
         """Initialize graph builder with embedding capabilities"""
         self.client = OpenAI(api_key=api_key) if api_key else OpenAI()
         self.vectorizer = TfidfVectorizer(
@@ -331,13 +332,12 @@ class TherapeuticGraphBuilder:
             }
         }
 
-def build(nodes: List[str], api_key: str = "") -> List[Dict[str, Any]]:
+def build(nodes: List[str]) -> List[Dict[str, Any]]:
     """
     Simple function to build graph from list of concept strings
     
     Args:
         nodes: List of concept strings
-        api_key: OpenAI API key for embeddings
         
     Returns:
         List of node coordinates
@@ -359,7 +359,7 @@ def build(nodes: List[str], api_key: str = "") -> List[Dict[str, Any]]:
         ]
     }
     
-    builder = TherapeuticGraphBuilder(api_key=api_key)
+    builder = TherapeuticGraphBuilder()
     graph = builder.build_session_graph(session_data)
     
     return graph.get('nodes', [])

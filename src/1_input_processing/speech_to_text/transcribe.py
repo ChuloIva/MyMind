@@ -4,16 +4,29 @@ from typing import List, Dict, Any, Optional
 import logging
 import json
 from .speaker_diarisation import diarise
+from ...common.config import settings
 
 logger = logging.getLogger(__name__)
 
 class WhisperTranscriber:
-    def __init__(self, model_size: str = "large-v3", device: str = "cuda", compute_type: str = "float16"):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(WhisperTranscriber, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, model_size: str = settings.whisper_model, device: str = settings.whisper_device, compute_type: str = "float16"):
         """Initialize Whisper transcription model"""
+        if self._initialized:
+            return
         self.model_size = model_size
         self.device = device
         self.compute_type = compute_type
         self.model = None
+        self.initialize_model()
+        self._initialized = True
         
     def initialize_model(self):
         """Initialize the Whisper model"""
@@ -89,9 +102,6 @@ class WhisperTranscriber:
 
 def transcribe_with_speakers(
     audio_path: Path, 
-    hf_token: str = "",
-    whisper_model: str = "large-v3",
-    device: str = "cuda",
     num_speakers: Optional[int] = None
 ) -> Dict[str, Any]:
     """
@@ -99,9 +109,6 @@ def transcribe_with_speakers(
     
     Args:
         audio_path: Path to audio file
-        hf_token: HuggingFace token for speaker diarization
-        whisper_model: Whisper model size
-        device: Device to run on
         num_speakers: Optional number of speakers
         
     Returns:
@@ -110,18 +117,17 @@ def transcribe_with_speakers(
     logger.info(f"Starting transcription with speaker diarization for {audio_path}")
     
     # Initialize transcriber
-    transcriber = WhisperTranscriber(whisper_model, device)
+    transcriber = WhisperTranscriber()
     
     # Get transcription
     transcription = transcriber.transcribe(audio_path)
     
     # Get speaker diarization
     diarization = []
-    if hf_token:
-        try:
-            diarization = diarise(audio_path, hf_token, num_speakers)
-        except Exception as e:
-            logger.warning(f"Speaker diarization failed: {e}")
+    try:
+        diarization = diarise(audio_path, num_speakers)
+    except Exception as e:
+        logger.warning(f"Speaker diarization failed: {e}")
     
     # Combine transcription with speaker information
     combined_segments = align_transcription_with_speakers(transcription, diarization)

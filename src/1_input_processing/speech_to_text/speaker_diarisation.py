@@ -4,16 +4,29 @@ from typing import List, Dict, Any, Optional
 import torch
 import logging
 import os
+from ...common.config import settings
 
 logger = logging.getLogger(__name__)
 
 class SpeakerDiarizer:
-    def __init__(self, model_name: str = "pyannote/speaker-diarization-3.1", hf_token: str = ""):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(SpeakerDiarizer, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, model_name: str = settings.pyannote_model, hf_token: str = settings.hf_token):
         """Initialize speaker diarization pipeline"""
+        if self._initialized:
+            return
         self.model_name = model_name
         self.hf_token = hf_token
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.initialize_pipeline()
+        self._initialized = True
         
     def initialize_pipeline(self):
         """Initialize the pyannote pipeline"""
@@ -87,17 +100,16 @@ class SpeakerDiarizer:
             'dominant_speaker': max(speaker_times.items(), key=lambda x: x[1]) if speaker_times else None
         }
 
-def diarise(wav_path: Path, hf_token: str = "", num_speakers: Optional[int] = None) -> List[Dict[str, Any]]:
+def diarise(wav_path: Path, num_speakers: Optional[int] = None) -> List[Dict[str, Any]]:
     """
     Convenience function for speaker diarization
     
     Args:
         wav_path: Path to audio file
-        hf_token: HuggingFace token
         num_speakers: Optional number of speakers
         
     Returns:
         List of diarization segments
     """
-    diarizer = SpeakerDiarizer(hf_token=hf_token)
+    diarizer = SpeakerDiarizer()
     return diarizer.diarize(wav_path, num_speakers=num_speakers)

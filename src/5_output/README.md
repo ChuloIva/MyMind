@@ -6,7 +6,7 @@ This module generates comprehensive therapeutic reports and insights using strea
 
 ### `generate_report.py`
 
-Current implementation uses GPT-4o with streaming capabilities:
+Current implementation uses GPT-4.1-nano with streaming capabilities:
 
 ```python
 from fastapi.responses import StreamingResponse
@@ -19,7 +19,7 @@ client = OpenAI()
 
 def stream(session_id: UUID):
     stream = client.chat.completions.create(
-        model="gpt-4o-large", stream=True,
+        model="gpt-4.1-nano-2025-04-14", stream=True,
         messages=[{"role":"user","content": build_prompt(session_id)}])
     return StreamingResponse(to_event_stream(stream), media_type="text/event-stream")
 ```
@@ -65,7 +65,7 @@ def generate_comprehensive_report(session_id: UUID) -> dict:
     full_prompt = report_prompt + "\n\nSession Context:\n" + context
     
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1-nano-2025-04-14",
         temperature=0.1,
         messages=[{"role": "user", "content": full_prompt}]
     )
@@ -103,7 +103,7 @@ def generate_progress_report(client_id: UUID, session_ids: list[str]) -> dict:
     full_prompt = progress_prompt + "\n\nSession Data:\n" + combined_context
     
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1-nano-2025-04-14",
         temperature=0.1,
         messages=[{"role": "user", "content": full_prompt}]
     )
@@ -128,7 +128,7 @@ async def stream_real_time_analysis(session_id: UUID):
         
         # Stream analysis
         stream = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4.1-nano-2025-04-14",
             stream=True,
             messages=[{
                 "role": "user",

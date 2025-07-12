@@ -1,0 +1,67 @@
+Analyze the following therapy session transcript for schema therapy patterns and modes.
+
+Transcript:
+{combined_text}
+
+Identify evidence of these schema modes:
+1. Vulnerable Child Mode (helpless, abandoned, abused feelings)
+2. Angry Child Mode (rage, frustration, tantrum behaviors)
+3. Punitive Parent Mode (harsh self-criticism, punishment)
+4. Demanding Parent Mode (entitlement, controlling behaviors)
+5. Detached Protector Mode (emotional disconnection, avoidance)
+6. Avoidant Protector Mode (withdrawal, isolation)
+7. Overcompensatory Mode (aggression, grandiosity to compensate)
+8. Healthy Adult Mode (balanced, rational, nurturing)
+
+Also identify early maladaptive schemas:
+- Abandonment/Instability
+- Mistrust/Abuse
+- Emotional Deprivation
+- Defectiveness/Shame
+- Social Isolation/Alienation
+- Dependence/Incompetence
+- Vulnerability to Harm
+- Enmeshment/Undeveloped Self
+- Failure
+- Entitlement/Grandiosity
+- Insufficient Self-Control
+- Subjugation
+- Self-Sacrifice
+- Approval-Seeking
+- Negativity/Pessimism
+- Emotional Inhibition
+- Unrelenting Standards
+- Punitiveness
+
+Return JSON format:
+{{
+    "active_modes": [
+        {{
+            "mode": "vulnerable_child",
+            "evidence": "specific quotes",
+            "intensity": 0.7,
+            "triggers": ["criticism", "rejection"],
+            "timestamp": 25.5
+        }}
+    ],
+    "schemas_identified": [
+        {{
+            "schema": "abandonment_instability", 
+            "evidence": "specific examples",
+            "strength": 0.8,
+            "manifestations": ["fear of being left alone"]
+        }}
+    ],
+    "mode_summary": {{
+        "dominant_mode": "vulnerable_child",
+        "healthy_adult_present": false,
+        "mode_switches": 3
+    }},
+    "schema_domains": {{
+        "disconnection_rejection": 0.8,
+        "impaired_autonomy": 0.3,
+        "impaired_limits": 0.1,
+        "other_directedness": 0.6,
+        "overvigilance_inhibition": 0.4
+    }}
+}}

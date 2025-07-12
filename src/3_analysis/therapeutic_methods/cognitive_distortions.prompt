@@ -1,0 +1,42 @@
+Analyze the following therapy session transcript for cognitive distortions from CBT.
+
+Transcript:
+{combined_text}
+
+Identify instances of these cognitive distortions:
+1. All-or-nothing thinking (black and white thinking)
+2. Overgeneralization (broad conclusions from single events)
+3. Mental filter (focusing only on negatives)
+4. Disqualifying the positive (rejecting positive experiences)
+5. Jumping to conclusions (mind reading, fortune telling)
+6. Magnification/Catastrophizing (blowing things out of proportion)
+7. Minimization (inappropriately shrinking importance)
+8. Emotional reasoning (feelings as facts)
+9. Should statements (rigid rules and expectations)
+10. Labeling (global negative labels)
+11. Personalization (taking responsibility for everything)
+12. Fortune telling (predicting negative outcomes)
+13. Mind reading (assuming others' thoughts)
+
+Return JSON format:
+{{
+    "distortions_found": [
+        {{
+            "type": "all_or_nothing_thinking",
+            "evidence": "specific quote from transcript",
+            "explanation": "why this is a cognitive distortion",
+            "severity": 0.8,
+            "timestamp": 15.2,
+            "alternative_thought": "more balanced perspective"
+        }}
+    ],
+    "distortion_summary": {{
+        "total_distortions": 5,
+        "most_common": "catastrophizing",
+        "severity_average": 0.6,
+        "patterns": ["tendency to catastrophize", "black and white thinking"]
+    }},
+    "therapeutic_focus_areas": [
+        "thought challenging", "cognitive restructuring"
+    ]
+}}

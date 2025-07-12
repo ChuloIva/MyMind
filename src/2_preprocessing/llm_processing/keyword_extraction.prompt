@@ -1,0 +1,43 @@
+Analyze the following therapy session transcript segments and extract keywords with sentiment analysis.
+
+Text to analyze:
+{text}
+
+For each segment, extract:
+1. 3-5 key therapeutic terms/concepts
+2. Emotional sentiment scores
+3. Clinical relevance indicators
+
+Return JSON in this exact format:
+{{
+    "segments": [
+        {{
+            "segment_id": 1,
+            "keywords": [
+                {{
+                    "term": "anxiety",
+                    "relevance": 0.8,
+                    "category": "symptom",
+                    "sentiment": -0.6,
+                    "start_time": 0.0,
+                    "end_time": 5.0
+                }}
+            ],
+            "sentiment_scores": {{
+                "compound": -0.2,
+                "positive": 0.1,
+                "negative": 0.3,
+                "neutral": 0.6
+            }},
+            "emotional_indicators": [
+                "stress", "worry"
+            ],
+            "therapeutic_themes": [
+                "cognitive_patterns", "emotional_regulation"
+            ]
+        }}
+    ]
+}}
+
+Analyze all {num_segments} segments and ensure each has the complete structure above.
+Focus on therapeutic relevance, emotional content, and clinical significance.

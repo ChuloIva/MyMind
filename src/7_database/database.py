@@ -1,21 +1,18 @@
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker
 import os
 from typing import Generator
-
-# Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://postgres:password@localhost:5432/mymind_db"
-)
+from ..common.config import settings
 
 # Create engine
 engine: Engine = create_engine(
-    DATABASE_URL,
-    echo=True,  # Set to False in production
+    settings.database_url,
     pool_pre_ping=True,
     pool_recycle=300
 )
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def create_db_and_tables():
     """Create database tables"""

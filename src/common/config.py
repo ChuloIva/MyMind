@@ -50,10 +50,6 @@ def ensure_directories():
         settings.audio_upload_path,
         settings.transcript_path,
         settings.processed_data_path,
-        "./data",
-        "./data/raw_audio",
-        "./data/transcripts", 
-        "./data/processed_data"
     ]
     
     for directory in directories:

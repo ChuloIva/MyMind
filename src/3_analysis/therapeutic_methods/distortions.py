@@ -3,43 +3,36 @@ from typing import List, Dict, Any, Optional
 import json
 import logging
 from datetime import datetime
+from pathlib import Path
+import csv
+from ....common.config import settings
 
 logger = logging.getLogger(__name__)
 
 class CognitiveDistortionAnalyzer:
-    def __init__(self, api_key: str = "", model: str = "gpt-4o"):
+    def __init__(self, api_key: str = settings.openai_api_key, model: str = "gpt-4.1-nano-2025-04-14"):
         """Initialize cognitive distortion analyzer"""
         self.client = OpenAI(api_key=api_key) if api_key else OpenAI()
         self.model = model
         
-        # Common cognitive distortions from CBT
-        self.distortion_types = [
-            "all_or_nothing_thinking",
-            "overgeneralization", 
-            "mental_filter",
-            "disqualifying_positive",
-            "jumping_to_conclusions",
-            "magnification_catastrophizing",
-            "minimization",
-            "emotional_reasoning",
-            "should_statements",
-            "labeling",
-            "personalization",
-            "fortune_telling",
-            "mind_reading"
-        ]
+        # Load data from files
+        self._load_data()
         
-        # Schema therapy modes and schemas
-        self.schema_modes = [
-            "vulnerable_child",
-            "angry_child",
-            "punitive_parent",
-            "demanding_parent", 
-            "detached_protector",
-            "avoidant_protector",
-            "overcompensatory_mode",
-            "healthy_adult"
-        ]
+    def _load_data(self):
+        """Load distortion types, schema modes, and prompts from files."""
+        base_path = Path(__file__).parent
+        
+        with open(base_path / "cognitive_distortions.prompt", "r") as f:
+            self.cognitive_distortions_prompt_template = f.read()
+            
+        with open(base_path / "schema_analysis.prompt", "r") as f:
+            self.schema_analysis_prompt_template = f.read()
+            
+        with open(base_path / "distortion_types.csv", "r") as f:
+            self.distortion_types = [row[0] for row in csv.reader(f)]
+            
+        with open(base_path / "schema_modes.csv", "r") as f:
+            self.schema_modes = [row[0] for row in csv.reader(f)]
         
     def analyze_session(self, session_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -131,50 +124,7 @@ class CognitiveDistortionAnalyzer:
             for seg in segments
         ])
         
-        prompt = f"""
-        Analyze the following therapy session transcript for cognitive distortions from CBT.
-        
-        Transcript:
-        {combined_text}
-        
-        Identify instances of these cognitive distortions:
-        1. All-or-nothing thinking (black and white thinking)
-        2. Overgeneralization (broad conclusions from single events)
-        3. Mental filter (focusing only on negatives)
-        4. Disqualifying the positive (rejecting positive experiences)
-        5. Jumping to conclusions (mind reading, fortune telling)
-        6. Magnification/Catastrophizing (blowing things out of proportion)
-        7. Minimization (inappropriately shrinking importance)
-        8. Emotional reasoning (feelings as facts)
-        9. Should statements (rigid rules and expectations)
-        10. Labeling (global negative labels)
-        11. Personalization (taking responsibility for everything)
-        12. Fortune telling (predicting negative outcomes)
-        13. Mind reading (assuming others' thoughts)
-        
-        Return JSON format:
-        {{
-            "distortions_found": [
-                {{
-                    "type": "all_or_nothing_thinking",
-                    "evidence": "specific quote from transcript",
-                    "explanation": "why this is a cognitive distortion",
-                    "severity": 0.8,
-                    "timestamp": 15.2,
-                    "alternative_thought": "more balanced perspective"
-                }}
-            ],
-            "distortion_summary": {{
-                "total_distortions": 5,
-                "most_common": "catastrophizing",
-                "severity_average": 0.6,
-                "patterns": ["tendency to catastrophize", "black and white thinking"]
-            }},
-            "therapeutic_focus_areas": [
-                "thought challenging", "cognitive restructuring"
-            ]
-        }}
-        """
+        prompt = self.cognitive_distortions_prompt_template.format(combined_text=combined_text)
         
         try:
             response = self.client.chat.completions.create(
@@ -209,75 +159,7 @@ class CognitiveDistortionAnalyzer:
             for seg in segments
         ])
         
-        prompt = f"""
-        Analyze the following therapy session transcript for schema therapy patterns and modes.
-        
-        Transcript:
-        {combined_text}
-        
-        Identify evidence of these schema modes:
-        1. Vulnerable Child Mode (helpless, abandoned, abused feelings)
-        2. Angry Child Mode (rage, frustration, tantrum behaviors)
-        3. Punitive Parent Mode (harsh self-criticism, punishment)
-        4. Demanding Parent Mode (entitlement, controlling behaviors)
-        5. Detached Protector Mode (emotional disconnection, avoidance)
-        6. Avoidant Protector Mode (withdrawal, isolation)
-        7. Overcompensatory Mode (aggression, grandiosity to compensate)
-        8. Healthy Adult Mode (balanced, rational, nurturing)
-        
-        Also identify early maladaptive schemas:
-        - Abandonment/Instability
-        - Mistrust/Abuse
-        - Emotional Deprivation
-        - Defectiveness/Shame
-        - Social Isolation/Alienation
-        - Dependence/Incompetence
-        - Vulnerability to Harm
-        - Enmeshment/Undeveloped Self
-        - Failure
-        - Entitlement/Grandiosity
-        - Insufficient Self-Control
-        - Subjugation
-        - Self-Sacrifice
-        - Approval-Seeking
-        - Negativity/Pessimism
-        - Emotional Inhibition
-        - Unrelenting Standards
-        - Punitiveness
-        
-        Return JSON format:
-        {{
-            "active_modes": [
-                {{
-                    "mode": "vulnerable_child",
-                    "evidence": "specific quotes",
-                    "intensity": 0.7,
-                    "triggers": ["criticism", "rejection"],
-                    "timestamp": 25.5
-                }}
-            ],
-            "schemas_identified": [
-                {{
-                    "schema": "abandonment_instability", 
-                    "evidence": "specific examples",
-                    "strength": 0.8,
-                    "manifestations": ["fear of being left alone"]
-                }}
-            ],
-            "mode_summary": {{
-                "dominant_mode": "vulnerable_child",
-                "healthy_adult_present": false,
-                "mode_switches": 3
-            }},
-            "schema_domains": {{
-                "disconnection_rejection": 0.8,
-                "impaired_autonomy": 0.3,
-                "impaired_limits": 0.1,
-                "other_directedness": 0.6,
-                "overvigilance_inhibition": 0.4
-            }}
-        }}
-        """
+        prompt = self.schema_analysis_prompt_template.format(combined_text=combined_text)
         
         try:
             response = self.client.chat.completions.create(
@@ -367,7 +249,7 @@ class CognitiveDistortionAnalyzer:
     
     def _generate_recommendations(
         self, 
-        distortions: Dict[str, Any], 
+        distortions: Dict[str, Any],
         schemas: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Generate therapeutic recommendations"""
@@ -498,13 +380,12 @@ class CognitiveDistortionAnalyzer:
             }
         }
 
-def analyse(transcript: str, api_key: str = "") -> Dict[str, Any]:
+def analyse(transcript: str) -> Dict[str, Any]:
     """
     Analyze transcript for cognitive distortions and schema patterns
     
     Args:
         transcript: Therapy session transcript
-        api_key: OpenAI API key
         
     Returns:
         Therapeutic analysis results
@@ -514,5 +395,6 @@ def analyse(transcript: str, api_key: str = "") -> Dict[str, Any]:
         'transcription': [{'text': transcript, 'speaker': 'CLIENT', 'start': 0}]
     }
     
-    analyzer = CognitiveDistortionAnalyzer(api_key=api_key)
+    analyzer = CognitiveDistortionAnalyzer()
     return analyzer.analyze_session(session_data)
+

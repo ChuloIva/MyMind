@@ -4,14 +4,18 @@ import json
 import logging
 import re
 from datetime import datetime
+from ...common.config import settings
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 class KeywordExtractor:
-    def __init__(self, api_key: str = "", model: str = "gpt-4o-mini"):
+    def __init__(self, api_key: str = settings.openai_api_key, model: str = "gpt-4.1-nano-2025-04-14"):
         """Initialize keyword extractor with OpenAI client"""
         self.client = OpenAI(api_key=api_key) if api_key else OpenAI()
         self.model = model
+        with open(Path(__file__).parent / "keyword_extraction.prompt", "r") as f:
+            self.prompt_template = f.read()
         
     def extract_keywords_and_sentiment(
         self, 
@@ -80,51 +84,7 @@ class KeywordExtractor:
     def _build_prompt(self, text: str, num_segments: int) -> str:
         """Build prompt for keyword extraction and sentiment analysis"""
         
-        return f"""
-        Analyze the following therapy session transcript segments and extract keywords with sentiment analysis.
-        
-        Text to analyze:
-        {text}
-        
-        For each segment, extract:
-        1. 3-5 key therapeutic terms/concepts
-        2. Emotional sentiment scores
-        3. Clinical relevance indicators
-        
-        Return JSON in this exact format:
-        {{
-            "segments": [
-                {{
-                    "segment_id": 1,
-                    "keywords": [
-                        {{
-                            "term": "anxiety",
-                            "relevance": 0.8,
-                            "category": "symptom",
-                            "sentiment": -0.6,
-                            "start_time": 0.0,
-                            "end_time": 5.0
-                        }}
-                    ],
-                    "sentiment_scores": {{
-                        "compound": -0.2,
-                        "positive": 0.1,
-                        "negative": 0.3,
-                        "neutral": 0.6
-                    }},
-                    "emotional_indicators": [
-                        "stress", "worry"
-                    ],
-                    "therapeutic_themes": [
-                        "cognitive_patterns", "emotional_regulation"
-                    ]
-                }}
-            ]
-        }}
-        
-        Analyze all {num_segments} segments and ensure each has the complete structure above.
-        Focus on therapeutic relevance, emotional content, and clinical significance.
-        """
+        return self.prompt_template.format(text=text, num_segments=num_segments)
     
     def _apply_results_to_segments(
         self, 
@@ -165,7 +125,6 @@ class KeywordExtractor:
 
 def extract_session_keywords(
     transcription_data: Dict[str, Any], 
-    api_key: str = "",
     chunk_size: int = 3
 ) -> Dict[str, Any]:
     """
@@ -173,13 +132,12 @@ def extract_session_keywords(
     
     Args:
         transcription_data: Session transcription with segments
-        api_key: OpenAI API key
         chunk_size: Number of sentences to process together
         
     Returns:
         Enhanced transcription data with keywords and sentiment
     """
-    extractor = KeywordExtractor(api_key=api_key)
+    extractor = KeywordExtractor()
     
     # Get segments from transcription data
     segments = transcription_data.get('combined_segments', [])
@@ -201,13 +159,12 @@ def extract_session_keywords(
     
     return enhanced_data
 
-def extract(text: str, api_key: str = "") -> Dict[str, Any]:
+def extract(text: str) -> Dict[str, Any]:
     """
     Simple keyword extraction function (for compatibility)
     
     Args:
         text: Text to analyze
-        api_key: OpenAI API key
         
     Returns:
         Extracted keywords and sentiment
@@ -215,7 +172,7 @@ def extract(text: str, api_key: str = "") -> Dict[str, Any]:
     # Convert text to segment format
     segments = [{'text': text, 'start': 0, 'end': 0}]
     
-    extractor = KeywordExtractor(api_key=api_key)
+    extractor = KeywordExtractor()
     results = extractor.extract_keywords_and_sentiment(segments, chunk_size=1)
     
     return results[0] if results else {}

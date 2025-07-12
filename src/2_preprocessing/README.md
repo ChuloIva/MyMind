@@ -7,21 +7,21 @@ This module processes raw transcripts using advanced LLM techniques to extract k
 ```
 2_preprocessing/
 └── llm_processing/
-    ├── keyword_extraction.py  # GPT-4o keyword and sentiment extraction
+    ├── keyword_extraction.py  # GPT-4.1-nano keyword and sentiment extraction
     └── README.md              # Detailed implementation guide
 ```
 
 ## Core Functionality
 
-### GPT-4o Keyword Extraction
-- **Model**: `gpt-4o-mini` for cost-effective processing
+### GPT-4.1-nano Keyword Extraction
+- **Model**: `gpt-4.1-nano-2025-04-14` for cost-effective processing
 - **Output**: Structured JSON with temporal mapping
 - **Features**: Keyword extraction, sentiment analysis, confidence scores
 - **Integration**: Direct database storage with JSONB indexing
 
 ### Processing Pipeline
 1. **Input**: Raw transcript segments from speech-to-text
-2. **Analysis**: GPT-4o processes text for keywords and sentiment
+2. **Analysis**: GPT-4.1-nano processes text for keywords and sentiment
 3. **Structuring**: JSON output with temporal annotations
 4. **Storage**: PostgreSQL with optimized indexing
 5. **Downstream**: Feeds into analysis engine for insights
@@ -39,7 +39,7 @@ PROMPT = "Return JSON: [{sentence_id, keywords:[{term,sentiment,start_ms,end_ms}
 
 def extract(text: str):
     res = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4.1-nano-2025-04-14",
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": PROMPT + text}]
     )
@@ -69,7 +69,7 @@ def extract(text: str):
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "processed_at": "2023-12-01T14:30:00Z",
-  "model": "gpt-4o-mini",
+  "model": "gpt-4.1-nano-2025-04-14",
   "keywords": [
     {
       "sentence_id": 0,
@@ -157,7 +157,7 @@ sentence = SessionSentence(
 ```python
 # Standard configuration
 response = client.chat.completions.create(
-    model="gpt-4o-mini",
+    model="gpt-4.1-nano-2025-04-14",
     temperature=0.0,  # Deterministic output
     max_tokens=1000,
     response_format={"type": "json_object"}
@@ -165,7 +165,7 @@ response = client.chat.completions.create(
 
 # High-precision configuration
 response = client.chat.completions.create(
-    model="gpt-4o",  # Higher accuracy for critical analysis
+    model="gpt-4.1-nano-2025-04-14",  # Higher accuracy for critical analysis
     temperature=0.0,
     max_tokens=2000,
     response_format={"type": "json_object"}
@@ -232,7 +232,7 @@ def track_processing_metrics(func):
 ## Optimization Strategies
 
 ### Cost Management
-- **Model Selection**: Use `gpt-4o-mini` for routine processing
+- **Model Selection**: Use `gpt-4.1-nano-2025-04-14` for routine processing
 - **Batch Processing**: Group segments for efficiency
 - **Token Optimization**: Minimize prompt length
 - **Caching**: Store results to avoid reprocessing

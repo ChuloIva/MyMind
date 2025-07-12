@@ -13,7 +13,7 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 │   ├── 1_input_processing/       # Audio transcription and speaker diarization
 │   │   └── speech_to_text/       # Whisper-based transcription
 │   ├── 2_preprocessing/          # Text processing pipeline
-│   │   └── llm_processing/       # GPT-4o keyword extraction and sentiment
+│   │   └── llm_processing/       # GPT-4.1-nano keyword extraction and sentiment
 │   ├── 3_analysis/               # Core analysis engine
 │   │   ├── nlp/                  # Natural language processing
 │   │   │   └── graph_construction/  # UMAP/t-SNE embedding visualization
@@ -40,7 +40,7 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 - **Word-level timestamps**: Precise temporal mapping
 
 ### 2. Preprocessing Pipeline
-- **GPT-4o Mini**: Keyword extraction and sentiment analysis
+- **GPT-4.1-nano**: Keyword extraction and sentiment analysis
 - **JSON-structured output**: Temporal keyword mapping
 - **PostgreSQL storage**: Efficient data persistence
 
@@ -56,7 +56,7 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 - **Therapeutic Metrics**: Stress, mood, and progress indicators
 
 ### 5. Output Layer
-- **Streaming Reports**: Real-time GPT-4o analysis
+- **Streaming Reports**: Real-time GPT-4.1-nano analysis
 - **Markdown Generation**: Structured therapeutic insights
 - **Priority Scoring**: Issue ranking and recommendations
 
@@ -89,7 +89,7 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 
 ## Technology Stack
 
-- **AI/ML**: OpenAI GPT-4o, Whisper, Pyannote, UMAP
+- **AI/ML**: OpenAI GPT-4.1-nano, Whisper, Pyannote, UMAP
 - **Backend**: FastAPI, SQLModel, PostgreSQL
 - **Frontend**: React, TypeScript, Tailwind CSS
 - **Infrastructure**: Docker, Alembic migrations
@@ -98,7 +98,7 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 
 1. **Audio Processing**: Upload therapy session audio
 2. **Transcription**: Whisper converts speech to timestamped text
-3. **Analysis**: GPT-4o extracts keywords and therapeutic insights
+3. **Analysis**: GPT-4.1-nano extracts keywords and therapeutic insights
 4. **Visualization**: UMAP creates concept relationship maps
 5. **Profiling**: Track client progress and therapeutic outcomes
 6. **Reporting**: Generate streaming therapeutic reports
