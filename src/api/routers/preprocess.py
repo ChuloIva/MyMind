@@ -10,10 +10,10 @@ from datetime import datetime
 import re
 
 # Local imports
-from ...7_database.database import get_session, SessionLocal
-from ...7_database.models import Session as SessionModel, SessionSentence, SessionStatus
-from ...1_input_processing.speech_to_text.transcribe import transcribe_with_speakers
-from ...2_preprocessing.llm_processing.keyword_extraction import extract_session_keywords
+from ...database.database import get_session, SessionLocal
+from ...database.models import Session as SessionModel, SessionSentence, SessionStatus
+from ...input_processing.speech_to_text.transcribe import transcribe_with_speakers
+from ...preprocessing.llm_processing.keyword_extraction import extract_session_keywords
 from ...common.config import settings
 
 logger = logging.getLogger(__name__)
@@ -198,7 +198,7 @@ async def process_transcription_background(
 ):
     """Background task for transcription and speaker diarization"""
     
-    from ...7_database.database import SessionLocal
+    from ...database.database import SessionLocal
     try:
         with SessionLocal() as db:
             # Get session
@@ -258,7 +258,7 @@ async def process_keywords_background(
 ):
     """Background task for keyword extraction"""
     
-    from ...7_database.database import SessionLocal
+    from ...database.database import SessionLocal
     try:
         with SessionLocal() as db:
             # Get session sentences
@@ -281,7 +281,7 @@ async def process_keywords_background(
                 })
             
             # Extract keywords
-            from ...2_preprocessing.llm_processing.keyword_extraction import KeywordExtractor
+            from ...preprocessing.llm_processing.keyword_extraction import KeywordExtractor
             extractor = KeywordExtractor()
             processed_segments = extractor.extract_keywords_and_sentiment(segments, chunk_size)
             

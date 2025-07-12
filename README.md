@@ -10,21 +10,21 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 │   ├── transcripts/              # Text transcripts
 │   └── processed_data/           # Processed analysis results
 ├── src/
-│   ├── 1_input_processing/       # Audio transcription and speaker diarization
+│   ├── input_processing/       # Audio transcription and speaker diarization
 │   │   └── speech_to_text/       # Whisper-based transcription
-│   ├── 2_preprocessing/          # Text processing pipeline
+│   ├── preprocessing/          # Text processing pipeline
 │   │   └── llm_processing/       # GPT-4.1-nano keyword extraction and sentiment
-│   ├── 3_analysis/               # Core analysis engine
+│   ├── analysis/               # Core analysis engine
 │   │   ├── nlp/                  # Natural language processing
 │   │   │   └── graph_construction/  # UMAP/t-SNE embedding visualization
 │   │   ├── rag/                  # LangChain RetrievalQA system
 │   │   └── therapeutic_methods/  # CBT/schema therapy evaluations
-│   ├── 4_profiling/              # Client profiling system
+│   ├── profiling/              # Client profiling system
 │   │   └── needs_assessment/     # Trajectory summarization
-│   ├── 5_output/                 # Report generation
-│   ├── 6_api/                    # FastAPI gateway
+│   ├── output/                 # Report generation
+│   ├── api/                    # FastAPI gateway
 │   │   └── routers/              # API endpoints
-│   ├── 7_database/               # SQLModel database layer
+│   ├── database/               # SQLModel database layer
 │   └── common/                   # Shared utilities
 └── ui/                           # React user interface
     ├── dashboard/                # Analysis dashboard
@@ -79,7 +79,7 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 
 2. **Start API Server**:
    ```bash
-   uvicorn src.6_api.main:app --reload
+   uvicorn src.api.main:app --reload
    ```
 
 3. **Launch UI**:

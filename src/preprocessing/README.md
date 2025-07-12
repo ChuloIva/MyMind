@@ -5,7 +5,7 @@ This module processes raw transcripts using advanced LLM techniques to extract k
 ## Architecture
 
 ```
-2_preprocessing/
+preprocessing/
 └── llm_processing/
     ├── keyword_extraction.py  # GPT-4.1-nano keyword and sentiment extraction
     └── README.md              # Detailed implementation guide

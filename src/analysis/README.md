@@ -5,7 +5,7 @@ This is the core analysis module that processes structured transcript data to ge
 ## Architecture
 
 ```
-3_analysis/
+analysis/
 ├── nlp/
 │   ├── graph_construction/
 │   │   ├── graph_builder.py    # UMAP embedding visualization

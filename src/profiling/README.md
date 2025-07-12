@@ -5,7 +5,7 @@ This module creates comprehensive client profiles through needs assessment and t
 ## Architecture
 
 ```
-4_profiling/
+profiling/
 ├── needs_assessment/
 │   ├── summarise.py           # Trajectory analysis and client metrics
 │   └── README.md             # Needs assessment documentation

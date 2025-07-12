@@ -1,4 +1,5 @@
 from sqlmodel import Field, SQLModel, Index, Relationship
+from sqlalchemy import JSON
 from uuid import UUID, uuid4
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -43,8 +44,8 @@ class SessionSentence(SQLModel, table=True):
     speaker: str
     text: str
     confidence: Optional[float] = None
-    keywords: Optional[Dict[str, Any]] = Field(default=None)   # jsonb
-    sentiment_scores: Optional[Dict[str, Any]] = Field(default=None)   # jsonb
+    keywords: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)   # jsonb
+    sentiment_scores: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)   # jsonb
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Relationships
@@ -61,16 +62,16 @@ class SessionAnalysis(SQLModel, table=True):
     session_id: UUID = Field(foreign_key="session.id", unique=True)
     
     # Analysis results
-    key_themes: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    mood_assessment: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    cognitive_distortions: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    therapeutic_insights: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    progress_indicators: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    risk_factors: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
+    key_themes: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    mood_assessment: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    cognitive_distortions: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    therapeutic_insights: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    progress_indicators: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    risk_factors: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
     
     # Embeddings and visualization
-    embedding_coordinates: Optional[Dict[str, Any]] = Field(default=None)  # jsonb for UMAP coordinates
-    concept_graph: Optional[Dict[str, Any]] = Field(default=None)  # jsonb for graph data
+    embedding_coordinates: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb for UMAP coordinates
+    concept_graph: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb for graph data
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -83,16 +84,16 @@ class ClientProfile(SQLModel, table=True):
     client_id: UUID = Field(foreign_key="client.id", unique=True)
     
     # Profile data
-    demographics: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    therapy_goals: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    clinical_notes: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    risk_assessment: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    treatment_plan: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
+    demographics: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    therapy_goals: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    clinical_notes: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    risk_assessment: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    treatment_plan: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
     
     # Progress tracking
-    baseline_metrics: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    current_metrics: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
-    trajectory_summary: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
+    baseline_metrics: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    current_metrics: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
+    trajectory_summary: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -103,7 +104,7 @@ class TherapeuticReport(SQLModel, table=True):
     report_type: str  # "summary", "comprehensive", "progress"
     title: str
     content: str  # markdown content
-    metadata: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
+    metadata: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb
     generated_at: datetime = Field(default_factory=datetime.utcnow)
     
     __table_args__ = (
@@ -116,7 +117,7 @@ class QAInteraction(SQLModel, table=True):
     session_id: UUID = Field(foreign_key="session.id")
     question: str
     answer: str
-    sources: Optional[Dict[str, Any]] = Field(default=None)  # jsonb for source references
+    sources: Optional[Dict[str, Any]] = Field(default=None, sa_column=JSON)  # jsonb for source references
     confidence_score: Optional[float] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     

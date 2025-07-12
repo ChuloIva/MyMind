@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from uuid import UUID
-from src.5_output.generate_report import stream
+from src.output.generate_report import stream
 
 router = APIRouter()
 

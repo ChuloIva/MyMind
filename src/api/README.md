@@ -5,7 +5,7 @@ This module provides a high-performance FastAPI gateway that exposes all system 
 ## Architecture
 
 ```
-6_api/
+api/
 ├── main.py              # FastAPI application entry point
 └── routers/
     ├── preprocess.py    # POST /preprocess/{session_id}

@@ -5,7 +5,7 @@ This module handles all incoming audio data, converting it to structured text tr
 ## Architecture
 
 ```
-1_input_processing/
+input_processing/
 └── speech_to_text/
     ├── transcribe.py          # Whisper large-v3 transcription
     ├── speaker_diarisation.py # Pyannote speaker separation

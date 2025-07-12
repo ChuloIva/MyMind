@@ -5,7 +5,7 @@ This module provides comprehensive data management using SQLModel with PostgreSQ
 ## Architecture
 
 ```
-7_database/
+database/
 ├── models.py            # SQLModel database schemas
 ├── migrations/          # Alembic database migrations
 └── README.md           # This file

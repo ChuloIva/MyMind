@@ -158,14 +158,14 @@ MAX_SPEAKERS=5              # Maximum speakers to detect
 
 ```bash
 # Start with auto-reload
-python -m uvicorn src.6_api.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Production Mode
 
 ```bash
 # Start with production settings
-python -m uvicorn src.6_api.main:app --host 0.0.0.0 --port 8000 --workers 4
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ### Docker Deployment

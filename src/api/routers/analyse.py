@@ -1,12 +1,7 @@
-# /src/6_api/routers/analyse.py
+# /src/api/routers/analyse.py
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 import logging
-import sys
-import os
-
-# Add the src directory to the path to handle numbered directory imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Import the actual analysis functions from your modules
 from preprocessing.llm_processing.keyword_extraction import KeywordExtractor
