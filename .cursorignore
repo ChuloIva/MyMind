@@ -1,1 +1,5 @@
 /Users/ivanculo/Desktop/Projects/MyMind/ui/dashboard/node_modules
+   .env
+   .venv/
+   venv/
+   mymind.db
