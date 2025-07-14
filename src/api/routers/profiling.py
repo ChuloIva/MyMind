@@ -1,38 +1,69 @@
 # src/6_api/routers/profiling.py
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from sqlmodel import Session, select
 from uuid import UUID
 from typing import List, Dict, Any
+import json
 
 # Database imports
-from src.database.database import get_session
-from src.database.models import ClientNeedSummary
+from ...database.database import get_session
+from ...database.models import ClientNeedSummary, Session as SessionModel
 
 # Profiling imports
-from src.profiling.needs_assessment.needs_profiler import NeedsProfiler
-
-# Output imports
-from src.output.needs_report import get_client_needs_profile, NeedsProfileReport
-
-# Analysis imports
-from src.analysis.therapeutic_methods.distortions import CognitiveDistortionAnalyzer
+from ...profiling.needs_assessment.needs_profiler import NeedsProfiler
 
 # Router setup
 router = APIRouter(prefix="/api/profiling", tags=["profiling"])
 
-# Helper functions that need to be implemented or imported
-def get_recent_sessions(client_id: UUID, session_count: int) -> List[UUID]:
+# Helper functions
+def get_recent_sessions(client_id: UUID, session_count: int, db: Session) -> List[UUID]:
     """Get recent session IDs for a client"""
-    # TODO: Implement database query to get recent sessions
-    # This should query the Session table for the given client_id
-    # For now, return empty list as placeholder
-    return []
+    sessions = db.exec(
+        select(SessionModel.id)
+        .where(SessionModel.client_id == client_id)
+        .order_by(SessionModel.created_at.desc())
+        .limit(session_count)
+    ).all()
+    return [session.id for session in sessions]
 
-def generate_visual_profile(client_id: UUID) -> Dict[str, Any]:
+def generate_visual_profile(profile_data: Dict[str, Any]) -> Dict[str, Any]:
     """Generate visual profile data for client"""
-    report_generator = NeedsProfileReport()
-    return report_generator.generate_visual_profile(client_id)
+    # Create chart data structures for frontend
+    life_segment_scores = profile_data.get("life_segment_scores", {})
+    need_fulfillment_scores = profile_data.get("need_fulfillment_scores", {})
+    
+    # Radar chart data for life segments
+    radar_data = {
+        "labels": list(life_segment_scores.keys()),
+        "datasets": [{
+            "label": "Sentiment",
+            "data": [scores.get("sentiment", 0) for scores in life_segment_scores.values()],
+            "backgroundColor": "rgba(75, 192, 192, 0.2)",
+            "borderColor": "rgba(75, 192, 192, 1)"
+        }, {
+            "label": "Fulfillment",
+            "data": [scores.get("fulfillment", 0) for scores in life_segment_scores.values()],
+            "backgroundColor": "rgba(255, 99, 132, 0.2)",
+            "borderColor": "rgba(255, 99, 132, 1)"
+        }]
+    }
+    
+    # Bar chart data for needs
+    bar_data = {
+        "labels": list(need_fulfillment_scores.keys()),
+        "datasets": [{
+            "label": "Need Fulfillment",
+            "data": list(need_fulfillment_scores.values()),
+            "backgroundColor": "rgba(54, 162, 235, 0.2)",
+            "borderColor": "rgba(54, 162, 235, 1)"
+        }]
+    }
+    
+    return {
+        "radar_chart": radar_data,
+        "bar_chart": bar_data
+    }
 
 def generate_segment_insights(life_segment_scores: Dict[str, Dict[str, float]]) -> List[str]:
     """Generate insights from life segment scores"""
@@ -51,12 +82,15 @@ def generate_segment_insights(life_segment_scores: Dict[str, Dict[str, float]]) 
     
     return insights if insights else ["No significant patterns identified"]
 
-def generate_therapeutic_recommendations(profile: ClientNeedSummary) -> List[Dict[str, Any]]:
+def generate_therapeutic_recommendations(profile_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Generate therapeutic recommendations based on profile"""
     recommendations = []
     
+    unmet_needs = profile_data.get("unmet_needs", [])
+    life_segment_scores = profile_data.get("life_segment_scores", {})
+    
     # Recommendations based on unmet needs
-    for need_data in profile.unmet_needs:
+    for need_data in unmet_needs:
         need = need_data.get('need', 'Unknown')
         recommendations.append({
             'type': 'needs_focus',
@@ -66,7 +100,7 @@ def generate_therapeutic_recommendations(profile: ClientNeedSummary) -> List[Dic
         })
     
     # Recommendations based on concerning life segments
-    for segment, scores in profile.life_segment_scores.items():
+    for segment, scores in life_segment_scores.items():
         if scores.get('sentiment', 0) < -0.2:
             recommendations.append({
                 'type': 'life_segment',
@@ -82,40 +116,58 @@ def generate_therapeutic_recommendations(profile: ClientNeedSummary) -> List[Dic
         'description': 'Maintain current therapeutic direction'
     }]
 
+async def run_profiling_background(client_id: UUID, session_ids: List[UUID]):
+    """Background task to run the needs profiler."""
+    db = next(get_session())
+    profiler = NeedsProfiler(db_session=db)
+    profiler.build_client_profile(client_id, session_ids)
+        
 @router.post("/clients/{client_id}/analyze-needs")
 async def analyze_client_needs(
     client_id: UUID,
+    background_tasks: BackgroundTasks,
     session_count: int = 10,
     db: Session = Depends(get_session)
 ):
-    """Analyze client's needs profile"""
+    """Trigger a background task to build/update a client's needs profile."""
+    # Get recent sessions
+    session_ids = get_recent_sessions(client_id, session_count, db)
 
-    profiler = NeedsProfiler()
-    session_ids = get_recent_sessions(client_id, session_count)
+    if not session_ids:
+        raise HTTPException(status_code=404, detail="No sessions found for this client.")
 
-    profile = profiler.build_client_profile(client_id, session_ids)
-
-    return {
-        "client_id": str(client_id),
-        "profile": profile,
-        "visualization_data": generate_visual_profile(client_id)
-    }
+    background_tasks.add_task(run_profiling_background, client_id, session_ids)
+    
+    return {"message": "Needs profile analysis has been triggered.", "client_id": client_id}
 
 @router.get("/clients/{client_id}/needs-dashboard")
-async def get_needs_dashboard(client_id: UUID):
-    """Get dashboard data for needs visualization"""
+async def get_needs_dashboard(
+    client_id: UUID, 
+    db: Session = Depends(get_session)
+):
+    """Get dashboard data for needs visualization."""
+    # Get the client's needs summary
+    profile = db.exec(
+        select(ClientNeedSummary).where(ClientNeedSummary.client_id == client_id)
+    ).first()
 
-    profile = get_client_needs_profile(client_id)
+    if not profile or not profile.summary_data:
+        raise HTTPException(status_code=404, detail="Needs profile not generated yet. Please trigger analysis first.")
+
+    # Parse the JSON data
+    profile_data = json.loads(profile.summary_data)
+    life_segment_scores = profile_data.get("life_segment_scores", {})
 
     return {
         "life_segments": {
-            "data": profile.life_segment_scores,
-            "insights": generate_segment_insights(profile.life_segment_scores)
+            "data": life_segment_scores,
+            "insights": generate_segment_insights(life_segment_scores)
         },
         "needs": {
-            "fulfillment_scores": profile.need_fulfillment_scores,
-            "unmet": profile.unmet_needs,
-            "fulfilled": profile.fulfilled_needs
+            "fulfillment_scores": profile_data.get("need_fulfillment_scores", {}),
+            "unmet": profile_data.get("unmet_needs", []),
+            "fulfilled": profile_data.get("fulfilled_needs", [])
         },
-        "recommendations": generate_therapeutic_recommendations(profile)
+        "recommendations": generate_therapeutic_recommendations(profile_data),
+        "visualization_data": generate_visual_profile(profile_data)
     }

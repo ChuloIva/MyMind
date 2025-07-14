@@ -29,6 +29,20 @@ class Session(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     client: Optional[Client] = Relationship(back_populates="sessions")
+    sentences: List["SessionSentence"] = Relationship(back_populates="session")
+
+class SessionSentence(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    session_id: UUID = Field(foreign_key="session.id")
+    sentence_index: int
+    start_ms: int
+    end_ms: int
+    speaker: str
+    text: str
+    confidence: Optional[float] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    session: "Session" = Relationship(back_populates="sentences")
 
 class SessionAnalysis(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -82,8 +96,6 @@ class ClientNeedProfile(SQLModel, table=True):
     timestamp_ms: int
     extracted_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Additional context
-    context: Optional[Dict[str, Any]] = Field(default=None)  # jsonb
     therapeutic_relevance: float = 0.5  # 0 to 1
 
 class ClientNeedSummary(SQLModel, table=True):
@@ -91,21 +103,7 @@ class ClientNeedSummary(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     client_id: UUID = Field(foreign_key="client.id", unique=True)
 
-    # Aggregated scores by life segment
-    life_segment_scores: Dict[str, Dict[str, float]] = Field(default_factory=dict)
-    # Structure: {
-    #   "work": {"sentiment": 0.3, "fulfillment": 0.6, "frequency": 0.4},
-    #   "relationships": {"sentiment": -0.2, "fulfillment": 0.3, "frequency": 0.8}
-    # }
-
-    # Aggregated scores by need
-    need_fulfillment_scores: Dict[str, float] = Field(default_factory=dict)
-    # Structure: {"autonomy": 0.7, "competence": 0.5, "relatedness": 0.8}
-
-    # Top unmet needs
-    unmet_needs: List[Dict[str, Any]] = Field(default_factory=list)
-
-    # Top fulfilled needs
-    fulfilled_needs: List[Dict[str, Any]] = Field(default_factory=list)
+    # Simplified fields - JSON serialization can be added later
+    summary_data: Optional[str] = None  # JSON string for complex data
 
     last_updated: datetime = Field(default_factory=datetime.utcnow)

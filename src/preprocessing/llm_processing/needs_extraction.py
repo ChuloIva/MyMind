@@ -56,3 +56,21 @@ class NeedsExtractor:
         )
 
         return json.loads(response.choices[0].message.content)
+
+    def _load_needs_categories(self) -> List[Dict[str, str]]:
+        """Load needs categories from database"""
+        # This should ideally load from database, but for now return placeholder
+        return [
+            {"need": "autonomy", "category_type": "sdt"},
+            {"need": "competence", "category_type": "sdt"},
+            {"need": "relatedness", "category_type": "sdt"},
+            # Add more needs as needed
+        ]
+
+    def _load_life_segments(self) -> List[str]:
+        """Load life segments from database"""
+        # This should ideally load from database, but for now return placeholder
+        return [
+            "work", "relationships", "family", "health", "financial", 
+            "personal_growth", "recreation", "spirituality", "education"
+        ]

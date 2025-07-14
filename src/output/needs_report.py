@@ -2,27 +2,27 @@
 
 from uuid import UUID
 from typing import Dict, Any
+import json
 from src.database.models import ClientNeedSummary
 from src.database.database import get_session
 from sqlmodel import Session, select
 
-def get_client_needs_profile(client_id: UUID) -> ClientNeedSummary:
+def get_client_needs_profile(client_id: UUID) -> Dict[str, Any]:
     """Get client needs profile from database"""
     db = next(get_session())
     statement = select(ClientNeedSummary).where(ClientNeedSummary.client_id == client_id)
     profile = db.exec(statement).first()
     
-    if not profile:
+    if not profile or not profile.summary_data:
         # Return empty profile if not found
-        return ClientNeedSummary(
-            client_id=client_id,
-            life_segment_scores={},
-            need_fulfillment_scores={},
-            unmet_needs=[],
-            fulfilled_needs=[]
-        )
+        return {
+            "life_segment_scores": {},
+            "need_fulfillment_scores": {},
+            "unmet_needs": [],
+            "fulfilled_needs": []
+        }
     
-    return profile
+    return json.loads(profile.summary_data)
 
 class NeedsProfileReport:
     def generate_needs_assessment_report(self, client_id: UUID) -> str:
@@ -36,18 +36,18 @@ class NeedsProfileReport:
         ## Life Segment Analysis
 
         ### Most Positive Areas:
-        {self._format_positive_segments(profile.life_segment_scores)}
+        {self._format_positive_segments(profile.get('life_segment_scores', {}))}
 
         ### Areas of Concern:
-        {self._format_concerning_segments(profile.life_segment_scores)}
+        {self._format_concerning_segments(profile.get('life_segment_scores', {}))}
 
         ## Needs Fulfillment Analysis
 
         ### Well-Met Needs:
-        {self._format_fulfilled_needs(profile.fulfilled_needs)}
+        {self._format_fulfilled_needs(profile.get('fulfilled_needs', []))}
 
         ### Unmet Needs Requiring Attention:
-        {self._format_unmet_needs(profile.unmet_needs)}
+        {self._format_unmet_needs(profile.get('unmet_needs', []))}
 
         ## Therapeutic Recommendations:
         {self._generate_recommendations(profile)}
@@ -61,8 +61,8 @@ class NeedsProfileReport:
         profile = get_client_needs_profile(client_id)
 
         return {
-            'life_segment_radar': self._create_radar_data(profile.life_segment_scores),
-            'needs_fulfillment_bar': self._create_bar_chart_data(profile.need_fulfillment_scores),
+            'life_segment_radar': self._create_radar_data(profile.get('life_segment_scores', {})),
+            'needs_fulfillment_bar': self._create_bar_chart_data(profile.get('need_fulfillment_scores', {})),
             'sentiment_heatmap': self._create_heatmap_data(profile),
             'progress_timeline': self._create_timeline_data(client_id)
         }
@@ -111,17 +111,17 @@ class NeedsProfileReport:
         
         return "\n".join(formatted_needs)
 
-    def _generate_recommendations(self, profile: ClientNeedSummary) -> str:
+    def _generate_recommendations(self, profile: Dict[str, Any]) -> str:
         """Generate therapeutic recommendations based on profile"""
         recommendations = []
         
         # Recommendations based on unmet needs
-        for need_data in profile.unmet_needs:
+        for need_data in profile.get('unmet_needs', []):
             need = need_data.get('need', 'Unknown')
             recommendations.append(f"- Focus on addressing **{need.title()}** needs through targeted interventions")
         
         # Recommendations based on concerning life segments
-        for segment, scores in profile.life_segment_scores.items():
+        for segment, scores in profile.get('life_segment_scores', {}).items():
             if scores.get('sentiment', 0) < -0.2:
                 recommendations.append(f"- Explore challenges in **{segment.title()}** area and develop coping strategies")
         
@@ -165,7 +165,7 @@ class NeedsProfileReport:
             }]
         }
 
-    def _create_heatmap_data(self, profile: ClientNeedSummary) -> Dict[str, Any]:
+    def _create_heatmap_data(self, profile: Dict[str, Any]) -> Dict[str, Any]:
         """Create heatmap data for sentiment analysis"""
         # This would create a more complex visualization showing sentiment over time
         # For now, return a simplified structure

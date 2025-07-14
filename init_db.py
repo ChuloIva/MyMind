@@ -11,7 +11,16 @@ from sqlmodel import SQLModel
 from src.database.database import engine, create_db_and_tables
 
 # Import all models to ensure they're registered
-from src.database.models import Client, Session, SessionAnalysis
+from src.database.models import (
+    Client, 
+    Session,
+    SessionSentence,
+    SessionAnalysis, 
+    NeedCategory,
+    LifeSegment,
+    ClientNeedProfile,
+    ClientNeedSummary
+)
 
 def main():
     """Initialize the database and create all tables."""
