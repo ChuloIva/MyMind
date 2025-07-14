@@ -29,7 +29,7 @@ class NeedsExtractor:
         For each relevant segment, return a valid JSON object with the following structure:
         {{
             "segment_index": 0,
-            "text": "original text",
+            "text": "relevant excerpt from the segment",
             "extractions": [
                 {{
                     "need": "autonomy",  // must match available needs

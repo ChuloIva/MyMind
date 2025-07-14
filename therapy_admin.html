@@ -452,6 +452,69 @@
             margin-top: 2px;
         }
 
+        /* Additional styling for new features */
+        .result-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .result-section h4 {
+            margin-top: 0;
+            color: #0056b3;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+        
+        .result-section pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .client-id, .session-id {
+            font-family: monospace;
+            font-size: 12px;
+            color: #6c757d;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .client-id:hover, .session-id:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .sessions-container {
+            margin-left: 20px;
+            margin-top: 10px;
+            border-left: 2px solid #007bff;
+            padding-left: 15px;
+        }
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .insights-list li {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
@@ -481,6 +544,12 @@
             </a>
             <a href="#" class="nav-item" data-view="calendar">
                 <i>📅</i> Calendar
+            </a>
+            <a href="#" class="nav-item" data-view="analysis">
+                <i>📝</i> Text Analysis
+            </a>
+            <a href="#" class="nav-item" data-view="profiling">
+                <i>🎯</i> Needs Profiling
             </a>
             <a href="#" class="nav-item" data-view="settings">
                 <i>⚙️</i> Settings
@@ -732,6 +801,78 @@
                         <button class="btn btn-secondary" onclick="loadCalendar()">🔄 Refresh</button>
                     </div>
                     <div id="calendar-grid" class="calendar-grid"></div>
+                </div>
+            </div>
+
+            <!-- Text Analysis View -->
+            <div id="analysis-view" class="view hidden">
+                <div class="card">
+                    <h3>Text Analysis</h3>
+                    <div class="upload-area">
+                        <p>📄 Upload a .txt file of a therapy session to analyze for keywords, cognitive distortions, schema patterns, and needs</p>
+                        <input type="file" id="text-file-input" accept=".txt" style="display: none;">
+                        <button class="btn" onclick="document.getElementById('text-file-input').click()">Choose File</button>
+                        <button class="btn btn-success" onclick="analyzeText()">🔍 Analyze Text</button>
+                    </div>
+                    
+                    <div id="text-analysis-results" class="card" style="display: none;">
+                        <h4>Analysis Results</h4>
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Needs Profiling View -->
+            <div id="profiling-view" class="view hidden">
+                <div class="card">
+                    <h3>Needs-Based Client Profiling</h3>
+                    
+                    <!-- Client Selection Section -->
+                    <div class="card">
+                        <h4>📋 Select Client & Sessions</h4>
+                        <button class="btn" onclick="loadClientsEnhanced()">📥 Load Clients</button>
+                        <div id="clients-enhanced-list" style="margin-top: 15px;"></div>
+                    </div>
+                    
+                    <!-- Profiling Controls -->
+                    <div class="card">
+                        <h4>🎯 Generate Profile</h4>
+                        <div class="form-group">
+                            <label>Client ID</label>
+                            <input type="text" id="profile-client-id" placeholder="Enter Client ID">
+                        </div>
+                        <div>
+                            <button class="btn" onclick="generateNeedsProfile()">🎯 Generate Profile</button>
+                            <button class="btn btn-secondary" onclick="viewNeedsDashboard()">📊 View Dashboard</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Dashboard Results -->
+                    <div id="needs-dashboard-results" class="card" style="display: none;">
+                        <h4>📊 Needs Analysis Dashboard</h4>
+                        <div class="grid">
+                            <div class="card">
+                                <h5>📈 Life Segments Overview</h5>
+                                <div style="height: 400px; position: relative;">
+                                    <canvas id="radar-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h5>📊 Needs Fulfillment</h5>
+                                <div style="height: 400px; position: relative;">
+                                    <canvas id="bar-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h5>💡 Insights</h5>
+                                <ul id="insights-list" style="list-style: none; padding: 0;"></ul>
+                            </div>
+                            <div class="card">
+                                <h5>🎯 Therapeutic Recommendations</h5>
+                                <div id="recommendations" style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

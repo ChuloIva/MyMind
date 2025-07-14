@@ -12,6 +12,490 @@ document.addEventListener('DOMContentLoaded', function() {
     showView('home');
 });
 
+// Text Analysis Functions (from main app)
+async function analyzeText() {
+    const fileInput = document.getElementById('text-file-input');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showMessage('Please select a file first.', 'error');
+        return;
+    }
+
+    showLoading(true);
+    hideMessage();
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch('/api/simple_analyze', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || 'Analysis failed.');
+        }
+
+        displayTextResults(data);
+
+    } catch (error) {
+        showMessage('Analysis failed: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function displayTextResults(data) {
+    const resultsContainer = document.getElementById('text-analysis-results');
+    
+    let needsSection = '';
+    if (data.needs_analysis) {
+        needsSection = `
+            <div class="result-section">
+                <h4>🎯 Needs Analysis</h4>
+                <pre>${JSON.stringify(data.needs_analysis, null, 2)}</pre>
+            </div>
+        `;
+    }
+    
+    resultsContainer.innerHTML = `
+        <div class="result-section">
+            <h4>🔑 Keywords & Sentiment</h4>
+            <pre>${JSON.stringify(data.keywords_analysis, null, 2)}</pre>
+        </div>
+        <div class="result-section">
+            <h4>🧠 Cognitive Distortions (CBT)</h4>
+            <pre>${JSON.stringify(data.therapeutic_analysis.cognitive_distortions, null, 2)}</pre>
+        </div>
+        <div class="result-section">
+            <h4>🎭 Schema Patterns</h4>
+            <pre>${JSON.stringify(data.therapeutic_analysis.schema_analysis, null, 2)}</pre>
+        </div>
+        ${needsSection}
+    `;
+    
+    resultsContainer.style.display = 'block';
+}
+
+// Audio Processing Functions (from main app)
+async function processAudioFile() {
+    const fileInput = document.getElementById('audio-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showMessage('Please select an audio file first.', 'error');
+        return;
+    }
+
+    if (!currentSession) {
+        showMessage('Please create a session first', 'error');
+        return;
+    }
+
+    showLoading(true);
+    hideMessage();
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('client_id', currentClient.id);
+
+    try {
+        const response = await fetch('/api/preprocess/upload-audio', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || 'Upload failed.');
+        }
+
+        currentSession.audio_session_id = data.session_id;
+        showMessage('✅ Audio uploaded successfully! Session ID: ' + data.session_id, 'success');
+        
+        // Enable complete processing button
+        document.getElementById('process-complete-btn').disabled = false;
+
+    } catch (error) {
+        showMessage('Upload failed: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function processComplete() {
+    if (!currentSession || !currentSession.audio_session_id) {
+        showMessage('Please upload an audio file first.', 'error');
+        return;
+    }
+
+    showLoading(true);
+    hideMessage();
+
+    try {
+        const response = await fetch(`/api/preprocess/process-complete/${currentSession.audio_session_id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                num_speakers: 2,
+                chunk_size: 3
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || 'Processing failed.');
+        }
+
+        showMessage('🚀 Complete processing started! Check progress in session management.', 'success');
+        
+        // Also trigger needs extraction
+        setTimeout(async () => {
+            try {
+                await fetch(`/api/preprocess/needs/${currentSession.audio_session_id}`, {
+                    method: 'POST',
+                });
+            } catch (e) {
+                console.warn('Needs extraction failed:', e);
+            }
+        }, 5000);
+
+    } catch (error) {
+        showMessage('Processing failed: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Enhanced Client Management Functions
+async function loadClientsEnhanced() {
+    showLoading(true);
+    hideMessage();
+
+    try {
+        const response = await fetch('/api/profiling/clients');
+        const clients = await response.json();
+
+        if (!response.ok) {
+            throw new Error('Failed to load clients');
+        }
+
+        displayClientsEnhanced(clients);
+
+    } catch (error) {
+        showMessage('Failed to load clients: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function displayClientsEnhanced(clients) {
+    const container = document.getElementById('clients-enhanced-list');
+    
+    if (clients.length === 0) {
+        container.innerHTML = '<p>No clients found.</p>';
+        return;
+    }
+
+    container.innerHTML = '<h4>📋 Available Clients (click ID to copy):</h4>';
+    
+    clients.forEach(client => {
+        const clientDiv = document.createElement('div');
+        clientDiv.className = 'client-item';
+        clientDiv.innerHTML = `
+            <div>
+                <span class="client-id" onclick="copyToClipboard('${client.id}', this)" title="Click to copy ID">${client.id}</span>
+                <strong>${client.name}</strong>
+                ${client.email ? `(${client.email})` : ''}
+                <span style="float: right; color: #6c757d;">${client.session_count} sessions</span>
+            </div>
+            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                Created: ${new Date(client.created_at).toLocaleDateString()}
+            </div>
+            <div class="sessions-container" id="sessions-${client.id}" style="display: none;">
+                <button onclick="loadClientSessionsEnhanced('${client.id}')" class="btn btn-sm" style="font-size: 12px;">📊 View Sessions</button>
+            </div>
+        `;
+        
+        clientDiv.addEventListener('click', (e) => {
+            if (e.target.classList.contains('client-id')) return;
+            toggleClientSessionsEnhanced(client.id);
+        });
+        
+        container.appendChild(clientDiv);
+    });
+}
+
+async function loadClientSessionsEnhanced(clientId) {
+    const sessionsContainer = document.getElementById(`sessions-${clientId}`);
+    sessionsContainer.innerHTML = '<div class="loading">Loading sessions...</div>';
+
+    try {
+        const response = await fetch(`/api/profiling/clients/${clientId}/sessions`);
+        const sessions = await response.json();
+
+        if (!response.ok) {
+            throw new Error(sessions.detail || 'Failed to load sessions');
+        }
+
+        displayClientSessionsEnhanced(clientId, sessions);
+
+    } catch (error) {
+        sessionsContainer.innerHTML = `<div class="error">Failed to load sessions: ${error.message}</div>`;
+    }
+}
+
+function displayClientSessionsEnhanced(clientId, sessions) {
+    const sessionsContainer = document.getElementById(`sessions-${clientId}`);
+    
+    if (sessions.length === 0) {
+        sessionsContainer.innerHTML = '<p style="font-style: italic;">No sessions found for this client.</p>';
+        return;
+    }
+
+    let sessionsHtml = '<h5>📊 Sessions (click ID to copy):</h5>';
+    
+    sessions.forEach(session => {
+        sessionsHtml += `
+            <div class="session-item">
+                <span class="session-id" onclick="copyToClipboard('${session.id}', this)" title="Click to copy ID">${session.id}</span>
+                <strong>${session.title}</strong>
+                <span class="session-status status-${session.status}">${session.status}</span>
+                <div style="font-size: 11px; color: #6c757d; margin-top: 3px;">
+                    ${new Date(session.created_at).toLocaleString()}
+                </div>
+                ${session.notes ? `<div style="font-size: 12px; margin-top: 5px;">${session.notes}</div>` : ''}
+            </div>
+        `;
+    });
+    
+    sessionsContainer.innerHTML = sessionsHtml;
+}
+
+function toggleClientSessionsEnhanced(clientId) {
+    const sessionsContainer = document.getElementById(`sessions-${clientId}`);
+    if (sessionsContainer.style.display === 'none') {
+        sessionsContainer.style.display = 'block';
+        loadClientSessionsEnhanced(clientId);
+    } else {
+        sessionsContainer.style.display = 'none';
+    }
+}
+
+// Needs Profiling Functions (from main app)
+async function generateNeedsProfile() {
+    const clientId = document.getElementById('profile-client-id').value.trim();
+    
+    if (!clientId) {
+        showMessage('Please enter a Client ID.', 'error');
+        return;
+    }
+
+    showLoading(true);
+    hideMessage();
+
+    try {
+        const response = await fetch(`/api/profiling/clients/${clientId}/analyze-needs`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                session_count: 10
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || 'Profile generation failed.');
+        }
+
+        showMessage('✅ Profile analysis started! Click "View Dashboard" to see results once processing is complete.', 'success');
+
+    } catch (error) {
+        showMessage('Profile generation failed: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function viewNeedsDashboard() {
+    const clientId = document.getElementById('profile-client-id').value.trim();
+    
+    if (!clientId) {
+        showMessage('Please enter a Client ID.', 'error');
+        return;
+    }
+
+    showLoading(true);
+    hideMessage();
+
+    try {
+        const response = await fetch(`/api/profiling/clients/${clientId}/needs-dashboard`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || 'Dashboard loading failed.');
+        }
+
+        displayNeedsDashboard(data);
+        document.getElementById('needs-dashboard-results').style.display = 'block';
+
+    } catch (error) {
+        showMessage('Dashboard loading failed: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function displayNeedsDashboard(data) {
+    // Display insights
+    const insightsList = document.getElementById('insights-list');
+    insightsList.innerHTML = '';
+    data.life_segments.insights.forEach(insight => {
+        const li = document.createElement('li');
+        li.textContent = insight;
+        insightsList.appendChild(li);
+    });
+
+    // Display recommendations
+    const recommendationsDiv = document.getElementById('recommendations');
+    recommendationsDiv.innerHTML = '<h4>Therapeutic Recommendations:</h4>';
+    data.recommendations.forEach(rec => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <strong>${rec.intervention}</strong> (Priority: ${rec.priority})
+            <br><small>${rec.description}</small>
+        `;
+        div.style.marginBottom = '10px';
+        recommendationsDiv.appendChild(div);
+    });
+
+    // Create radar chart
+    createRadarChart(data.visualization_data.radar_chart);
+    
+    // Create bar chart
+    createBarChart(data.visualization_data.bar_chart);
+}
+
+function createRadarChart(chartData) {
+    const ctx = document.getElementById('radar-chart').getContext('2d');
+    
+    if (window.radarChart) {
+        window.radarChart.destroy();
+    }
+    
+    window.radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: false
+                    },
+                    suggestedMin: -1,
+                    suggestedMax: 1,
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Life Segments Analysis'
+                }
+            }
+        }
+    });
+}
+
+function createBarChart(chartData) {
+    const ctx = document.getElementById('bar-chart').getContext('2d');
+    
+    if (window.barChart) {
+        window.barChart.destroy();
+    }
+    
+    window.barChart = new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Needs Fulfillment Scores'
+                }
+            }
+        }
+    });
+}
+
+// Utility Functions
+function copyToClipboard(text, element) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = element.textContent;
+        element.textContent = 'Copied!';
+        element.style.backgroundColor = '#28a745';
+        element.style.color = 'white';
+        
+        setTimeout(() => {
+            element.textContent = originalText;
+            element.style.backgroundColor = '';
+            element.style.color = '';
+        }, 1000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showMessage('Failed to copy to clipboard', 'error');
+    });
+}
+
+function hideMessage() {
+    const messages = document.querySelectorAll('.success, .error');
+    messages.forEach(msg => msg.remove());
+}
+
+async function checkSessionStatus(sessionId) {
+    try {
+        const response = await fetch(`/api/preprocess/status/${sessionId}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            return data;
+        }
+        return null;
+    } catch (error) {
+        console.error('Failed to check session status:', error);
+        return null;
+    }
+}
+
 // Setup event listeners
 function setupEventListeners() {
     // Navigation
@@ -83,6 +567,16 @@ function showView(view, subview = null) {
             document.getElementById('breadcrumb-text').textContent = 'Calendar';
             document.getElementById('calendar-view').classList.remove('hidden');
             loadCalendar();
+            break;
+        case 'analysis':
+            document.getElementById('page-title').textContent = 'Text Analysis';
+            document.getElementById('breadcrumb-text').textContent = 'Text Analysis';
+            document.getElementById('analysis-view').classList.remove('hidden');
+            break;
+        case 'profiling':
+            document.getElementById('page-title').textContent = 'Needs Profiling';
+            document.getElementById('breadcrumb-text').textContent = 'Needs Profiling';
+            document.getElementById('profiling-view').classList.remove('hidden');
             break;
         case 'settings':
             document.getElementById('page-title').textContent = 'Settings';
