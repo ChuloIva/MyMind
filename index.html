@@ -1,109 +1,301 @@
-<!-- /index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyMind - Core Analysis</title>
+    <title>MyMind - Therapeutic AI Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: #f4f7f9; color: #333; }
-        .container { max-width: 900px; margin: 40px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { color: #1a2b4d; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
-        h2 { color: #0056b3; }
-        .upload-section { margin-bottom: 30px; padding: 20px; border: 2px dashed #007bff; background-color: #f8f9fa; border-radius: 8px; text-align: center; }
-        input[type="file"] { margin-bottom: 15px; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; cursor: pointer; transition: background-color 0.3s; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            background-color: #f4f7f9; 
+            color: #333; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 20px; 
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .nav-tabs {
+            display: flex;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background-color: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            border-right: 1px solid #e9ecef;
+        }
+        .nav-tab:last-child { border-right: none; }
+        .nav-tab.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .nav-tab:hover:not(.active) {
+            background-color: #e9ecef;
+        }
+        .tab-content {
+            display: none;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .tab-content.active { display: block; }
+        
+        .upload-section { 
+            margin-bottom: 30px; 
+            padding: 20px; 
+            border: 2px dashed #007bff; 
+            background-color: #f8f9fa; 
+            border-radius: 8px; 
+            text-align: center; 
+        }
+        input[type="file"], input[type="text"], select { 
+            margin: 10px; 
+            padding: 8px 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+            margin: 5px;
+        }
         button:hover:not(:disabled) { background-color: #0056b3; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #loading { display: none; margin-top: 20px; font-weight: bold; color: #007bff; }
-        .results-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        .result-box { background-color: #f8f9fa; padding: 20px; border-radius: 5px; border: 1px solid #e9ecef; }
-        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #e9ecef; padding: 15px; border-radius: 4px; font-size: 14px; max-height: 400px; overflow-y: auto; }
-        .error { color: #d9534f; font-weight: bold; margin-top: 15px; }
+        button.secondary { background-color: #6c757d; }
+        button.secondary:hover:not(:disabled) { background-color: #545b62; }
+        button.success { background-color: #28a745; }
+        button.success:hover:not(:disabled) { background-color: #1e7e34; }
+        
+        .loading { 
+            display: none; 
+            margin-top: 20px; 
+            font-weight: bold; 
+            color: #007bff; 
+            text-align: center;
+            padding: 20px;
+        }
+        .error { 
+            color: #d9534f; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            padding: 10px;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .results-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            gap: 20px; 
+            margin-top: 20px;
+        }
+        .result-box { 
+            background-color: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 1px solid #e9ecef; 
+        }
+        .result-box h3 {
+            margin-top: 0;
+            color: #0056b3;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+        pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            background-color: #e9ecef; 
+            padding: 15px; 
+            border-radius: 4px; 
+            font-size: 14px; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+        
+        .session-item {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        .session-item h4 {
+            margin: 0 0 10px 0;
+            color: #0056b3;
+        }
+        .session-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .status-completed { background-color: #d4edda; color: #155724; }
+        .status-processing { background-color: #fff3cd; color: #856404; }
+        .status-failed { background-color: #f8d7da; color: #721c24; }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        .insights-list {
+            list-style: none;
+            padding: 0;
+        }
+        .insights-list li {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .recommendations {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>MyMind - Core Analysis Engine</h1>
-        <div class="upload-section">
-            <p>Upload a .txt file of a therapy session to analyze for keywords, cognitive distortions, and schema patterns.</p>
-            <input type="file" id="fileInput" accept=".txt">
-            <br>
-            <button id="analyzeButton">Analyze Text</button>
+        <div class="header">
+            <h1>🧠 MyMind - Therapeutic AI Platform</h1>
+            <p>Comprehensive therapy session analysis with AI-powered insights</p>
         </div>
-        
-        <div id="loading">Analyzing... Please wait. This may take a moment.</div>
-        <div id="error" class="error"></div>
 
-        <div id="results" class="results-grid" style="display: none;">
-            <div class="result-box">
-                <h2>Keywords & Sentiment</h2>
-                <pre id="keywordsResult"></pre>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('text-analysis')">📝 Text Analysis</button>
+            <button class="nav-tab" onclick="switchTab('audio-sessions')">🎵 Audio Sessions</button>
+            <button class="nav-tab" onclick="switchTab('session-management')">📊 Session Management</button>
+            <button class="nav-tab" onclick="switchTab('needs-profiling')">🎯 Needs Profiling</button>
+        </div>
+
+        <!-- Text Analysis Tab -->
+        <div id="text-analysis" class="tab-content active">
+            <h2>Quick Text Analysis</h2>
+            <div class="upload-section">
+                <p>📄 Upload a .txt file of a therapy session to analyze for keywords, cognitive distortions, schema patterns, and needs</p>
+                <input type="file" id="fileInput" accept=".txt">
+                <br>
+                <button id="analyzeButton">🔍 Analyze Text</button>
             </div>
-            <div class="result-box">
-                <h2>Cognitive Distortions (CBT)</h2>
-                <pre id="distortionsResult"></pre>
+            
+            <div id="text-loading" class="loading">Analyzing... Please wait. This may take a moment.</div>
+            <div id="text-error" class="error" style="display: none;"></div>
+
+            <div id="text-results" class="results-grid" style="display: none;"></div>
+        </div>
+
+        <!-- Audio Sessions Tab -->
+        <div id="audio-sessions" class="tab-content">
+            <h2>Audio Session Processing</h2>
+            <div class="upload-section">
+                <p>🎵 Upload an audio file (.wav, .mp3, .m4a, .flac, .ogg) for transcription and analysis</p>
+                <input type="file" id="audioInput" accept=".wav,.mp3,.m4a,.flac,.ogg">
+                <br>
+                <label>Client ID (optional): <input type="text" id="clientId" placeholder="Enter client ID"></label>
+                <label>Number of speakers: <select id="numSpeakers"><option value="">Auto-detect</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+                <br>
+                <button id="uploadAudioButton">⬆️ Upload Audio</button>
+                <button id="processCompleteButton" disabled>🚀 Complete Processing</button>
             </div>
-            <div class="result-box">
-                <h2>Schema Patterns</h2>
-                <pre id="schemasResult"></pre>
+            
+            <div id="audio-loading" class="loading">Processing... This may take several minutes.</div>
+            <div id="audio-error" class="error" style="display: none;"></div>
+            <div id="audio-success" class="success" style="display: none;"></div>
+        </div>
+
+        <!-- Session Management Tab -->
+        <div id="session-management" class="tab-content">
+            <h2>Session Management</h2>
+            <div style="margin-bottom: 20px;">
+                <button id="refreshSessionsButton">🔄 Refresh Sessions</button>
+                <input type="text" id="sessionClientId" placeholder="Filter by Client ID">
+            </div>
+            
+            <div id="sessions-loading" class="loading">Loading sessions...</div>
+            <div id="sessions-error" class="error" style="display: none;"></div>
+            <div id="sessions-list"></div>
+        </div>
+
+        <!-- Needs Profiling Tab -->
+        <div id="needs-profiling" class="tab-content">
+            <h2>Needs-Based Client Profiling</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="profileClientId" placeholder="Enter Client ID">
+                <button id="generateProfileButton">🎯 Generate Profile</button>
+                <button id="viewDashboardButton">📊 View Dashboard</button>
+            </div>
+            
+            <div id="profile-loading" class="loading">Generating profile...</div>
+            <div id="profile-error" class="error" style="display: none;"></div>
+            <div id="profile-success" class="success" style="display: none;"></div>
+            <div id="profile-results" style="display: none;">
+                <div class="results-grid">
+                    <div class="result-box">
+                        <h3>📈 Life Segments Overview</h3>
+                        <div class="chart-container">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="result-box">
+                        <h3>📊 Needs Fulfillment</h3>
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="result-box">
+                        <h3>💡 Insights</h3>
+                        <ul id="insights-list" class="insights-list"></ul>
+                    </div>
+                    <div class="result-box">
+                        <h3>🎯 Therapeutic Recommendations</h3>
+                        <div id="recommendations" class="recommendations"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const fileInput = document.getElementById('fileInput');
-        const analyzeButton = document.getElementById('analyzeButton');
-        const loadingDiv = document.getElementById('loading');
-        const errorDiv = document.getElementById('error');
-        const resultsDiv = document.getElementById('results');
-        
-        const keywordsResult = document.getElementById('keywordsResult');
-        const distortionsResult = document.getElementById('distortionsResult');
-        const schemasResult = document.getElementById('schemasResult');
-
-        analyzeButton.addEventListener('click', async () => {
-            const file = fileInput.files[0];
-            if (!file) {
-                alert('Please select a file first.');
-                return;
-            }
-
-            // Reset UI
-            resultsDiv.style.display = 'none';
-            errorDiv.textContent = '';
-            loadingDiv.style.display = 'block';
-            analyzeButton.disabled = true;
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const response = await fetch('/api/simple_analyze', {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.detail || 'Analysis failed.');
-                }
-
-                // Display results
-                keywordsResult.textContent = JSON.stringify(data.keywords_analysis, null, 2);
-                distortionsResult.textContent = JSON.stringify(data.therapeutic_analysis.cognitive_distortions, null, 2);
-                schemasResult.textContent = JSON.stringify(data.therapeutic_analysis.schema_analysis, null, 2);
-                
-                resultsDiv.style.display = 'grid';
-
-            } catch (error) {
-                errorDiv.textContent = 'An error occurred: ' + error.message;
-            } finally {
-                loadingDiv.style.display = 'none';
-                analyzeButton.disabled = false;
-            }
-        });
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>

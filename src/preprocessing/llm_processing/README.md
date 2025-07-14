@@ -1,6 +1,6 @@
-# LLM Processing with GPT-4o
+# LLM Processing with GPT-4.1-nano
 
-This module provides advanced text processing capabilities using OpenAI's GPT-4o models for keyword extraction, sentiment analysis, and therapeutic insight generation.
+This module provides advanced text processing capabilities using OpenAI's GPT-4.1-nano models for keyword extraction, sentiment analysis, and therapeutic insight generation.
 
 ## Overview
 
@@ -20,7 +20,7 @@ PROMPT = "Return JSON: [{sentence_id, keywords:[{term,sentiment,start_ms,end_ms}
 
 def extract(text: str):
     res = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4.1-nano-2025-04-14",
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": PROMPT + text}]
     )
@@ -56,7 +56,7 @@ async def extract_batch(texts: list[str]) -> list[dict]:
     """Process multiple text segments concurrently"""
     tasks = [
         async_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano-2025-04-14",
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": PROMPT + text}]
         ) for text in texts
@@ -117,7 +117,7 @@ def extract_therapeutic_insights(text: str) -> dict:
     """
     
     response = client.chat.completions.create(
-        model="gpt-4o",  # Use full model for complex analysis
+        model="gpt-4.1-nano-2025-04-14",  # Use nano model for complex analysis
         temperature=0.0,
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": therapeutic_prompt}]

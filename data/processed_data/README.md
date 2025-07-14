@@ -51,7 +51,7 @@ processed_data/
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "processed_at": "2023-12-01T14:30:00Z",
-  "model": "gpt-4o-mini",
+  "model": "gpt-4.1-nano-2025-04-14",
   "keywords": [
     {
       "sentence_id": 0,
@@ -123,7 +123,7 @@ processed_data/
 
 ### 1. Keyword Extraction
 - **Input**: Session transcripts
-- **Model**: GPT-4o-mini with structured output
+- **Model**: GPT-4.1-nano with structured output
 - **Output**: Temporal keyword mapping
 - **Storage**: PostgreSQL with JSONB indexing
 

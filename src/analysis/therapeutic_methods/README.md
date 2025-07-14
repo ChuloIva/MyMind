@@ -33,7 +33,7 @@ TEMPLATE = "Identify cognitive distortions… Return JSON: {distortions:[…]}"
 
 def analyse(transcript: str):
     r = client.chat.completions.create(
-        model="gpt-4o-large", temperature=0,
+        model="gpt-4.1-nano-2025-04-14", temperature=0,
         response_format={"type":"json_object"},
         messages=[{"role":"user","content":TEMPLATE+transcript}]
     )
@@ -90,7 +90,7 @@ def comprehensive_cbt_analysis(transcript: str) -> dict:
     """
     
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1-nano-2025-04-14",
         temperature=0.1,
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": cbt_prompt}]
@@ -121,7 +121,7 @@ def schema_therapy_analysis(transcript: str) -> dict:
     """
     
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1-nano-2025-04-14",
         temperature=0.0,
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": schema_prompt}]

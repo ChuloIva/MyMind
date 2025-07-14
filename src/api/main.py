@@ -3,7 +3,8 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from .routers import mvp, preprocess, analyse, rag, output, profiling
+from .routers import mvp, analyse, rag, output, profiling
+from .routers import preprocess_simple as preprocess
 
 app = FastAPI(
     title="MyMind Therapeutic AI",

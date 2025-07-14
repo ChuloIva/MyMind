@@ -40,7 +40,7 @@ from openai import OpenAI; client = OpenAI()
 def compute(client_id: UUID, transcript: str):
     prompt = "Summarise stress_index etc:" + transcript
     res = client.chat.completions.create(
-        model="gpt-4o-mini", response_format={"type":"json_object"},
+        model="gpt-4.1-nano-2025-04-14", response_format={"type":"json_object"},
         messages=[{"role":"user", "content": prompt}])
     return json.loads(res.choices[0].message.content)
 ```
@@ -75,7 +75,7 @@ def comprehensive_needs_assessment(client_id: UUID, session_ids: list[str]) -> d
     combined_text = "\n\n".join(all_transcripts)
     
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1-nano-2025-04-14",
         temperature=0.1,
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": assessment_prompt + combined_text}]

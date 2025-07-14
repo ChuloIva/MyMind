@@ -61,7 +61,7 @@ async def upload_audio_file(
         
         # Save uploaded file
         with open(audio_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+            shutil.copyfileobj(file.file, buffer)
         
         session.audio_file_path = str(audio_path)
         

@@ -49,8 +49,8 @@ class NeedsExtractor:
         """
 
         response = self.client.chat.completions.create(
-            model="gpt-4o",
-            temperature=0.1,
+            model="gpt-4.1-nano-2025-04-14",
+            temperature=0.4,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )
