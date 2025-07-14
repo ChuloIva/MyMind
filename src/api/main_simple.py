@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .routers import client_management, session_management
+from .routers import client_management, session_management, mvp
 
 app = FastAPI(
     title="MyMind Therapy Admin",
@@ -14,6 +14,7 @@ app = FastAPI(
 # Include the client and session management routers
 app.include_router(client_management.router)
 app.include_router(session_management.router)
+app.include_router(mvp.router)
 
 # Mount static files (CSS, JS, etc.)
 app.mount("/static", StaticFiles(directory="."), name="static")

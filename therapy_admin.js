@@ -18,9 +18,19 @@ async function analyzeText() {
     const file = fileInput.files[0];
     
     if (!file) {
-        showMessage('Please select a file first.', 'error');
+        showMessage('Please select a .txt file first using the "Choose File" button.', 'error');
         return;
     }
+
+    if (file.type !== 'text/plain') {
+        showMessage('Please select a valid .txt file.', 'error');
+        return;
+    }
+
+    // Clear previous results
+    const resultsContainer = document.getElementById('text-analysis-results');
+    resultsContainer.style.display = 'none';
+    resultsContainer.innerHTML = '';
 
     showLoading(true);
     hideMessage();
@@ -515,6 +525,7 @@ function setupEventListeners() {
 
     // File upload
     document.getElementById('audio-file').addEventListener('change', handleFileUpload);
+    document.getElementById('text-file-input').addEventListener('change', handleTextFileSelection);
 
     // Chat
     document.getElementById('chat-input').addEventListener('keypress', function(e) {
@@ -527,6 +538,13 @@ function setupEventListeners() {
     const uploadArea = document.getElementById('upload-area');
     uploadArea.addEventListener('dragover', handleDragOver);
     uploadArea.addEventListener('drop', handleDrop);
+    
+    // Text analysis drag and drop
+    const textUploadArea = document.querySelector('#analysis-view .upload-area');
+    if (textUploadArea) {
+        textUploadArea.addEventListener('dragover', handleTextDragOver);
+        textUploadArea.addEventListener('drop', handleTextDrop);
+    }
 }
 
 // Navigation functions
@@ -943,6 +961,34 @@ function handleFileUpload(e) {
     }
 }
 
+function handleTextFileSelection(e) {
+    const file = e.target.files[0];
+    const uploadArea = document.querySelector('#analysis-view .upload-area');
+    
+    if (file) {
+        if (file.type !== 'text/plain') {
+            showMessage('Please select a valid .txt file', 'error');
+            e.target.value = '';
+            return;
+        }
+        
+        // Update the upload area to show selected file
+        const fileInfo = uploadArea.querySelector('.file-info') || document.createElement('div');
+        fileInfo.className = 'file-info';
+        fileInfo.innerHTML = `
+            <p style="color: #28a745; margin-top: 10px;">
+                ✅ Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+            </p>
+        `;
+        
+        if (!uploadArea.querySelector('.file-info')) {
+            uploadArea.appendChild(fileInfo);
+        }
+        
+        showMessage(`File "${file.name}" selected successfully`, 'success');
+    }
+}
+
 function handleDragOver(e) {
     e.preventDefault();
     e.currentTarget.classList.add('dragover');
@@ -955,6 +1001,33 @@ function handleDrop(e) {
     const files = e.dataTransfer.files;
     if (files.length > 0) {
         uploadAudioFile(files[0]);
+    }
+}
+
+function handleTextDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('dragover');
+}
+
+function handleTextDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        if (file.type === 'text/plain') {
+            const fileInput = document.getElementById('text-file-input');
+            // Create a new FileList-like object
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+            
+            // Trigger the change event
+            handleTextFileSelection({ target: fileInput });
+        } else {
+            showMessage('Please drop a valid .txt file.', 'error');
+        }
     }
 }
 
