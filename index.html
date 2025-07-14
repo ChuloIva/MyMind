@@ -193,6 +193,38 @@
             border-radius: 4px;
             margin: 20px 0;
         }
+        .client-item, .session-item-clickable {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .client-item:hover, .session-item-clickable:hover {
+            background-color: #e9ecef;
+        }
+        .client-id, .session-id {
+            font-family: monospace;
+            font-size: 12px;
+            color: #6c757d;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .client-id:hover, .session-id:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        .sessions-container {
+            margin-left: 20px;
+            margin-top: 10px;
+            border-left: 2px solid #007bff;
+            padding-left: 15px;
+        }
     </style>
 </head>
 <body>
@@ -260,6 +292,16 @@
         <!-- Needs Profiling Tab -->
         <div id="needs-profiling" class="tab-content">
             <h2>Needs-Based Client Profiling</h2>
+            
+            <!-- Client Selection Section -->
+            <div class="upload-section" style="margin-bottom: 20px;">
+                <h3>📋 Select Client & Sessions</h3>
+                <button id="loadClientsButton">📥 Load Clients</button>
+                <div id="clients-loading" class="loading" style="display: none;">Loading clients...</div>
+                <div id="clients-list" style="margin-top: 15px;"></div>
+            </div>
+            
+            <!-- Profiling Controls -->
             <div style="margin-bottom: 20px;">
                 <input type="text" id="profileClientId" placeholder="Enter Client ID">
                 <button id="generateProfileButton">🎯 Generate Profile</button>
@@ -296,6 +338,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="/static/app.js"></script>
 </body>
 </html>

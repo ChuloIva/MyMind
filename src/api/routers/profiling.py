@@ -8,7 +8,7 @@ import json
 
 # Database imports
 from ...database.database import get_session
-from ...database.models import ClientNeedSummary, Session as SessionModel
+from ...database.models import ClientNeedSummary, Session as SessionModel, Client
 
 # Profiling imports
 from ...profiling.needs_assessment.needs_profiler import NeedsProfiler
@@ -25,7 +25,7 @@ def get_recent_sessions(client_id: UUID, session_count: int, db: Session) -> Lis
         .order_by(SessionModel.created_at.desc())
         .limit(session_count)
     ).all()
-    return [session.id for session in sessions]
+    return [session for session in sessions]
 
 def generate_visual_profile(profile_data: Dict[str, Any]) -> Dict[str, Any]:
     """Generate visual profile data for client"""
@@ -171,3 +171,38 @@ async def get_needs_dashboard(
         "recommendations": generate_therapeutic_recommendations(profile_data),
         "visualization_data": generate_visual_profile(profile_data)
     }
+
+@router.get("/clients")
+async def list_clients(db: Session = Depends(get_session)):
+    """List all clients with their IDs for easy selection."""
+    clients = db.exec(select(Client)).all()
+    return [{
+        "id": str(client.id),
+        "name": client.name or "Unnamed Client",
+        "email": client.email,
+        "created_at": client.created_at.isoformat(),
+        "session_count": len(client.sessions) if client.sessions else 0
+    } for client in clients]
+
+@router.get("/clients/{client_id}/sessions")
+async def list_client_sessions(
+    client_id: UUID,
+    db: Session = Depends(get_session)
+):
+    """List all sessions for a specific client with their IDs."""
+    sessions = db.exec(
+        select(SessionModel)
+        .where(SessionModel.client_id == client_id)
+        .order_by(SessionModel.created_at.desc())
+    ).all()
+    
+    if not sessions:
+        raise HTTPException(status_code=404, detail="No sessions found for this client.")
+    
+    return [{
+        "id": str(session.id),
+        "title": session.title or f"Session {session.created_at.strftime('%Y-%m-%d %H:%M')}",
+        "status": session.status,
+        "created_at": session.created_at.isoformat(),
+        "notes": session.notes
+    } for session in sessions]

@@ -26,7 +26,7 @@ class NeedsExtractor:
         Available life segments:
         {json.dumps(self.life_segments, indent=2)}
 
-        For each relevant segment, return:
+        For each relevant segment, return a valid JSON object with the following structure:
         {{
             "segment_index": 0,
             "text": "original text",

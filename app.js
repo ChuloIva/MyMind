@@ -259,6 +259,139 @@ async function checkSessionStatus(sessionId) {
     }
 }
 
+// Client and Session Management Functions
+async function loadClients() {
+    showLoading('clients-loading');
+    document.getElementById('clients-list').innerHTML = '';
+
+    try {
+        const response = await fetch('/api/profiling/clients');
+        const clients = await response.json();
+
+        if (!response.ok) {
+            throw new Error('Failed to load clients');
+        }
+
+        displayClients(clients);
+
+    } catch (error) {
+        document.getElementById('clients-list').innerHTML = `<div class="error">Failed to load clients: ${error.message}</div>`;
+    } finally {
+        hideLoading('clients-loading');
+    }
+}
+
+function displayClients(clients) {
+    const clientsList = document.getElementById('clients-list');
+    
+    if (clients.length === 0) {
+        clientsList.innerHTML = '<p>No clients found.</p>';
+        return;
+    }
+
+    clientsList.innerHTML = '<h4>📋 Available Clients (click ID to copy):</h4>';
+    
+    clients.forEach(client => {
+        const clientDiv = document.createElement('div');
+        clientDiv.className = 'client-item';
+        clientDiv.innerHTML = `
+            <div>
+                <span class="client-id" onclick="copyToClipboard('${client.id}', this)" title="Click to copy ID">${client.id}</span>
+                <strong>${client.name}</strong>
+                ${client.email ? `(${client.email})` : ''}
+                <span style="float: right; color: #6c757d;">${client.session_count} sessions</span>
+            </div>
+            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                Created: ${new Date(client.created_at).toLocaleDateString()}
+            </div>
+            <div class="sessions-container" id="sessions-${client.id}" style="display: none;">
+                <button onclick="loadClientSessions('${client.id}')" class="secondary" style="font-size: 12px;">📊 View Sessions</button>
+            </div>
+        `;
+        
+        clientDiv.addEventListener('click', (e) => {
+            if (e.target.classList.contains('client-id')) return;
+            toggleClientSessions(client.id);
+        });
+        
+        clientsList.appendChild(clientDiv);
+    });
+}
+
+async function loadClientSessions(clientId) {
+    const sessionsContainer = document.getElementById(`sessions-${clientId}`);
+    sessionsContainer.innerHTML = '<div class="loading">Loading sessions...</div>';
+
+    try {
+        const response = await fetch(`/api/profiling/clients/${clientId}/sessions`);
+        const sessions = await response.json();
+
+        if (!response.ok) {
+            throw new Error(sessions.detail || 'Failed to load sessions');
+        }
+
+        displayClientSessions(clientId, sessions);
+
+    } catch (error) {
+        sessionsContainer.innerHTML = `<div class="error">Failed to load sessions: ${error.message}</div>`;
+    }
+}
+
+function displayClientSessions(clientId, sessions) {
+    const sessionsContainer = document.getElementById(`sessions-${clientId}`);
+    
+    if (sessions.length === 0) {
+        sessionsContainer.innerHTML = '<p style="font-style: italic;">No sessions found for this client.</p>';
+        return;
+    }
+
+    let sessionsHtml = '<h5>📊 Sessions (click ID to copy):</h5>';
+    
+    sessions.forEach(session => {
+        sessionsHtml += `
+            <div class="session-item-clickable">
+                <span class="session-id" onclick="copyToClipboard('${session.id}', this)" title="Click to copy ID">${session.id}</span>
+                <strong>${session.title}</strong>
+                <span class="session-status status-${session.status}">${session.status}</span>
+                <div style="font-size: 11px; color: #6c757d; margin-top: 3px;">
+                    ${new Date(session.created_at).toLocaleString()}
+                </div>
+                ${session.notes ? `<div style="font-size: 12px; margin-top: 5px;">${session.notes}</div>` : ''}
+            </div>
+        `;
+    });
+    
+    sessionsContainer.innerHTML = sessionsHtml;
+}
+
+function toggleClientSessions(clientId) {
+    const sessionsContainer = document.getElementById(`sessions-${clientId}`);
+    if (sessionsContainer.style.display === 'none') {
+        sessionsContainer.style.display = 'block';
+        loadClientSessions(clientId);
+    } else {
+        sessionsContainer.style.display = 'none';
+    }
+}
+
+function copyToClipboard(text, element) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = element.textContent;
+        element.textContent = 'Copied!';
+        element.style.backgroundColor = '#28a745';
+        element.style.color = 'white';
+        
+        setTimeout(() => {
+            element.textContent = originalText;
+            element.style.backgroundColor = '';
+            element.style.color = '';
+        }, 1000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert('Failed to copy to clipboard');
+    });
+}
+
 // Needs Profiling Functions
 async function generateProfile() {
     const clientId = document.getElementById('profileClientId').value.trim();
@@ -442,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('refreshSessionsButton').addEventListener('click', refreshSessions);
     
     // Needs Profiling
+    document.getElementById('loadClientsButton').addEventListener('click', loadClients);
     document.getElementById('generateProfileButton').addEventListener('click', generateProfile);
     document.getElementById('viewDashboardButton').addEventListener('click', viewDashboard);
 });

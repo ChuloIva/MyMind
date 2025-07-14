@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from .routers import mvp, analyse, rag, output, profiling
 from .routers import preprocess_simple as preprocess
@@ -18,6 +19,9 @@ app.include_router(analyse.router)
 app.include_router(rag.router)
 app.include_router(output.router)
 app.include_router(profiling.router)
+
+# Mount static files (CSS, JS, etc.)
+app.mount("/static", StaticFiles(directory="."), name="static")
 
 # Add an endpoint to serve the index.html file
 @app.get("/", response_class=HTMLResponse, tags=["UI"])
