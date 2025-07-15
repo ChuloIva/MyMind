@@ -515,6 +515,30 @@
             border-radius: 4px;
         }
 
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .badge.high {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge.medium {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .badge.low {
+            background-color: #28a745;
+            color: white;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
@@ -547,9 +571,6 @@
             </a>
             <a href="#" class="nav-item" data-view="analysis">
                 <i>📝</i> Text Analysis
-            </a>
-            <a href="#" class="nav-item" data-view="profiling">
-                <i>🎯</i> Needs Profiling
             </a>
             <a href="#" class="nav-item" data-view="settings">
                 <i>⚙️</i> Settings
@@ -648,6 +669,7 @@
                         <button class="btn" onclick="showClientStats()">📊 View Stats</button>
                         <button class="btn btn-secondary" onclick="showClientQuestionnaire()">📋 Questionnaire</button>
                         <button class="btn btn-success" onclick="showClientSessions()">📝 Sessions</button>
+                        <button class="btn" onclick="showClientProfiling()">🎯 Needs Profiling</button>
                     </div>
                 </div>
             </div>
@@ -823,54 +845,60 @@
                 </div>
             </div>
 
-            <!-- Needs Profiling View -->
-            <div id="profiling-view" class="view hidden">
+            <!-- Client Sessions View -->
+            <div id="client-sessions-view" class="view hidden">
                 <div class="card">
-                    <h3>Needs-Based Client Profiling</h3>
-                    
-                    <!-- Client Selection Section -->
-                    <div class="card">
-                        <h4>📋 Select Client & Sessions</h4>
-                        <button class="btn" onclick="loadClientsEnhanced()">📥 Load Clients</button>
-                        <div id="clients-enhanced-list" style="margin-top: 15px;"></div>
+                    <h3>Client Sessions</h3>
+                    <div id="client-sessions-content">
+                        <!-- Sessions will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Profiling View -->
+            <div id="client-profiling-view" class="view hidden">
+                <div class="card">
+                    <h3>Client Needs Profiling</h3>
+                    <div id="client-profiling-content">
+                        <!-- Client info will be populated here -->
                     </div>
                     
                     <!-- Profiling Controls -->
                     <div class="card">
                         <h4>🎯 Generate Profile</h4>
                         <div class="form-group">
-                            <label>Client ID</label>
-                            <input type="text" id="profile-client-id" placeholder="Enter Client ID">
+                            <label>Number of Recent Sessions to Analyze</label>
+                            <input type="number" id="session-count" value="10" min="1" max="50">
                         </div>
                         <div>
-                            <button class="btn" onclick="generateNeedsProfile()">🎯 Generate Profile</button>
-                            <button class="btn btn-secondary" onclick="viewNeedsDashboard()">📊 View Dashboard</button>
+                            <button class="btn" onclick="generateClientNeedsProfile()">🎯 Generate Profile</button>
+                            <button class="btn btn-secondary" onclick="viewClientNeedsDashboard()">📊 View Dashboard</button>
                         </div>
                     </div>
                     
                     <!-- Dashboard Results -->
-                    <div id="needs-dashboard-results" class="card" style="display: none;">
+                    <div id="client-needs-dashboard-results" class="card" style="display: none;">
                         <h4>📊 Needs Analysis Dashboard</h4>
                         <div class="grid">
                             <div class="card">
                                 <h5>📈 Life Segments Overview</h5>
                                 <div style="height: 400px; position: relative;">
-                                    <canvas id="radar-chart"></canvas>
+                                    <canvas id="client-radar-chart"></canvas>
                                 </div>
                             </div>
                             <div class="card">
                                 <h5>📊 Needs Fulfillment</h5>
                                 <div style="height: 400px; position: relative;">
-                                    <canvas id="bar-chart"></canvas>
+                                    <canvas id="client-bar-chart"></canvas>
                                 </div>
                             </div>
                             <div class="card">
                                 <h5>💡 Insights</h5>
-                                <ul id="insights-list" style="list-style: none; padding: 0;"></ul>
+                                <ul id="client-insights-list" style="list-style: none; padding: 0;"></ul>
                             </div>
                             <div class="card">
                                 <h5>🎯 Therapeutic Recommendations</h5>
-                                <div id="recommendations" style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px;"></div>
+                                <div id="client-recommendations" style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px;"></div>
                             </div>
                         </div>
                     </div>

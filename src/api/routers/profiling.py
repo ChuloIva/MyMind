@@ -118,16 +118,21 @@ def generate_therapeutic_recommendations(profile_data: Dict[str, Any]) -> List[D
 
 async def run_profiling_background(client_id: UUID, session_ids: List[UUID]):
     """Background task to run the needs profiler."""
-    db = next(get_session())
-    profiler = NeedsProfiler(db_session=db)
-    profiler.build_client_profile(client_id, session_ids)
+    try:
+        db = next(get_session())
+        profiler = NeedsProfiler(db_session=db)
+        result = profiler.build_client_profile(client_id, session_ids)
+        print(f"✅ Profile generated for client {client_id}: {result}")
+    except Exception as e:
+        print(f"❌ Error generating profile for client {client_id}: {e}")
+        raise
         
 @router.post("/clients/{client_id}/analyze-needs")
 async def analyze_client_needs(
     client_id: UUID,
     background_tasks: BackgroundTasks,
-    session_count: int = 10,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    session_count: int = 10
 ):
     """Trigger a background task to build/update a client's needs profile."""
     # Get recent sessions
