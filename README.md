@@ -1,5 +1,7 @@
 # MyMind - Therapeutic AI Application
 
+![MyMind Dashboard](screen.png)
+
 A comprehensive AI-powered therapeutic support system that processes audio sessions, extracts insights, and provides real-time therapeutic analysis.
 
 ## Architecture Overview
@@ -70,22 +72,45 @@ A comprehensive AI-powered therapeutic support system that processes audio sessi
 - **PostgreSQL**: JSONB support for flexible data storage
 - **Session Indexing**: Optimized query performance
 
-## Quick Start
+## 🚀 Quick Start
 
-1. **Install Dependencies**:
+### Prerequisites
+- Python 3.8+
+- Virtual environment (recommended)
+
+### Installation & Setup
+
+1. **Clone and Navigate**
+   ```bash
+   cd /Users/ivanculo/Desktop/Projects/MyMind
+   ```
+
+2. **Create Virtual Environment**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install Dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Start API Server**:
+4. **Initialize Database**
    ```bash
-   uvicorn src.api.main:app --reload
+   python init_db.py
    ```
 
-3. **Launch UI**:
+5. **Start Server**
    ```bash
-   cd ui/dashboard && npm run dev
+   python run_therapy_admin.py
    ```
+
+6. **Access Application**
+   - **Main Admin UI**: http://localhost:8000
+   - **Analysis UI**: http://localhost:8000/analysis
+   - **API Documentation**: http://localhost:8000/docs
+   - **Health Check**: http://localhost:8000/health
 
 ## Technology Stack
 
