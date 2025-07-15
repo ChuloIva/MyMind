@@ -548,6 +548,34 @@ function setupEventListeners() {
 }
 
 // Navigation functions
+function updateBreadcrumb(breadcrumbItems) {
+    const breadcrumbElement = document.getElementById('breadcrumb-text');
+    breadcrumbElement.innerHTML = '';
+    
+    breadcrumbItems.forEach((item, index) => {
+        if (index > 0) {
+            const separator = document.createElement('span');
+            separator.textContent = ' > ';
+            breadcrumbElement.appendChild(separator);
+        }
+        
+        if (item.onclick) {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.textContent = item.text;
+            link.onclick = (e) => {
+                e.preventDefault();
+                item.onclick();
+            };
+            breadcrumbElement.appendChild(link);
+        } else {
+            const span = document.createElement('span');
+            span.textContent = item.text;
+            breadcrumbElement.appendChild(span);
+        }
+    });
+}
+
 function showView(view, subview = null) {
     // Update navigation
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -591,10 +619,10 @@ function showView(view, subview = null) {
             document.getElementById('breadcrumb-text').textContent = 'Text Analysis';
             document.getElementById('analysis-view').classList.remove('hidden');
             break;
-        case 'profiling':
-            document.getElementById('page-title').textContent = 'Needs Profiling';
-            document.getElementById('breadcrumb-text').textContent = 'Needs Profiling';
-            document.getElementById('profiling-view').classList.remove('hidden');
+        case 'client-profiling':
+            document.getElementById('page-title').textContent = 'Client Needs Profiling';
+            document.getElementById('breadcrumb-text').textContent = 'Client > Needs Profiling';
+            document.getElementById('client-profiling-view').classList.remove('hidden');
             break;
         case 'settings':
             document.getElementById('page-title').textContent = 'Settings';
@@ -752,6 +780,11 @@ async function showClientProfile(clientId) {
         
         currentClient = client;
         
+        // Hide all views first
+        document.querySelectorAll('.view').forEach(v => {
+            v.classList.add('hidden');
+        });
+        
         document.getElementById('page-title').textContent = client.name;
         document.getElementById('breadcrumb-text').innerHTML = `<a href="#" onclick="showView('clients')">Clients</a> > ${client.name}`;
         
@@ -780,6 +813,11 @@ async function showClientProfile(clientId) {
 }
 
 function showClientStats() {
+    // Hide all views first
+    document.querySelectorAll('.view').forEach(v => {
+        v.classList.add('hidden');
+    });
+    
     document.getElementById('page-title').textContent = `${currentClient.name} - Statistics`;
     document.getElementById('breadcrumb-text').innerHTML = `<a href="#" onclick="showView('clients')">Clients</a> > <a href="#" onclick="showClientProfile('${currentClient.id}')">${currentClient.name}</a> > Statistics`;
     document.getElementById('client-stats-view').classList.remove('hidden');
@@ -830,6 +868,11 @@ function loadClientCharts() {
 }
 
 function showClientQuestionnaire() {
+    // Hide all views first
+    document.querySelectorAll('.view').forEach(v => {
+        v.classList.add('hidden');
+    });
+    
     document.getElementById('page-title').textContent = `${currentClient.name} - Assessment`;
     document.getElementById('breadcrumb-text').innerHTML = `<a href="#" onclick="showView('clients')">Clients</a> > <a href="#" onclick="showClientProfile('${currentClient.id}')">${currentClient.name}</a> > Assessment`;
     document.getElementById('client-questionnaire-view').classList.remove('hidden');
@@ -1200,6 +1243,66 @@ function showMessage(message, type) {
 }
 
 // Session management functions
+async function showClientSessions() {
+    if (!currentClient) {
+        showMessage('No client selected', 'error');
+        return;
+    }
+    
+    // Hide all views first
+    document.querySelectorAll('.view').forEach(v => {
+        v.classList.add('hidden');
+    });
+    
+    try {
+        const response = await fetch(`/api/clients/${currentClient.id}/sessions`);
+        const sessions = await response.json();
+        
+        document.getElementById('page-title').textContent = `${currentClient.name} - Sessions`;
+        document.getElementById('breadcrumb-text').innerHTML = `<a href="#" onclick="showView('clients')">Clients</a> > <a href="#" onclick="showClientProfile('${currentClient.id}')">${currentClient.name}</a> > Sessions`;
+        
+        document.getElementById('client-sessions-content').innerHTML = `
+            <div class="card">
+                <h4>Sessions for ${currentClient.name}</h4>
+                <div class="session-list">
+                    ${sessions.length > 0 ? sessions.map(session => `
+                        <div class="session-item" onclick="showSessionView('${session.id}')">
+                            <div class="session-title">${session.title || 'Untitled Session'}</div>
+                            <div class="session-date">${new Date(session.created_at).toLocaleDateString()}</div>
+                            <span class="session-status status-${session.status}">${session.status}</span>
+                        </div>
+                    `).join('') : '<p>No sessions found for this client.</p>'}
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="showNewSessionForm()">➕ New Session</button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('client-sessions-view').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error loading client sessions:', error);
+        showMessage('Error loading client sessions', 'error');
+    }
+}
+
+function showNewSessionForm() {
+    if (!currentClient) {
+        showMessage('No client selected', 'error');
+        return;
+    }
+    
+    // Hide all views first
+    document.querySelectorAll('.view').forEach(v => {
+        v.classList.add('hidden');
+    });
+    
+    document.getElementById('page-title').textContent = `New Session for ${currentClient.name}`;
+    document.getElementById('breadcrumb-text').innerHTML = `<a href="#" onclick="showView('clients')">Clients</a> > <a href="#" onclick="showClientProfile('${currentClient.id}')">${currentClient.name}</a> > <a href="#" onclick="showClientSessions()">Sessions</a> > New Session`;
+    
+    document.getElementById('new-session-view').classList.remove('hidden');
+}
+
 async function editSession(sessionId) {
     // This would open an edit form
     showMessage('Edit session functionality not yet implemented', 'error');
@@ -1242,6 +1345,181 @@ async function loadSessionAnalysis(sessionId) {
         console.error('Error loading analysis:', error);
         showMessage('Error loading analysis', 'error');
     }
+}
+
+// Client Profiling Functions
+async function showClientProfiling() {
+    if (!currentClient) {
+        showMessage('No client selected', 'error');
+        return;
+    }
+    
+    // Hide all views first
+    document.querySelectorAll('.view').forEach(v => {
+        v.classList.add('hidden');
+    });
+    
+    document.getElementById('client-profiling-view').classList.remove('hidden');
+    
+    // Update breadcrumb
+    updateBreadcrumb([
+        { text: 'Clients', onclick: () => showView('clients') },
+        { text: currentClient.name || 'Unnamed Client', onclick: () => showClientProfile(currentClient.id) },
+        { text: 'Needs Profiling' }
+    ]);
+    
+    // Update client profiling content
+    const content = document.getElementById('client-profiling-content');
+    content.innerHTML = `
+        <div class="card">
+            <h4>📋 Client Information</h4>
+            <p><strong>Name:</strong> ${currentClient.name || 'Unnamed Client'}</p>
+            <p><strong>Email:</strong> ${currentClient.email || 'No email'}</p>
+            <p><strong>Client ID:</strong> <span class="client-id">${currentClient.id}</span></p>
+            <p><strong>Sessions:</strong> ${currentClient.session_count || 0}</p>
+        </div>
+    `;
+}
+
+async function generateClientNeedsProfile() {
+    if (!currentClient) {
+        showMessage('No client selected', 'error');
+        return;
+    }
+    
+    const sessionCount = document.getElementById('session-count').value || 10;
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`/api/profiling/clients/${currentClient.id}/analyze-needs?session_count=${sessionCount}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to generate profile');
+        }
+        
+        const result = await response.json();
+        showMessage('Profile generation started successfully', 'success');
+        
+        // Auto-refresh dashboard after a short delay
+        setTimeout(() => {
+            viewClientNeedsDashboard();
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error generating profile:', error);
+        showMessage('Error generating profile: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function viewClientNeedsDashboard() {
+    if (!currentClient) {
+        showMessage('No client selected', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`/api/profiling/clients/${currentClient.id}/needs-dashboard`);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to load dashboard');
+        }
+        
+        const dashboardData = await response.json();
+        displayClientNeedsDashboard(dashboardData);
+        
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+        showMessage('Error loading dashboard: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function displayClientNeedsDashboard(data) {
+    const resultsDiv = document.getElementById('client-needs-dashboard-results');
+    resultsDiv.style.display = 'block';
+    
+    // Create radar chart for life segments
+    const radarCtx = document.getElementById('client-radar-chart').getContext('2d');
+    
+    // Clear existing chart
+    if (window.clientRadarChart) {
+        window.clientRadarChart.destroy();
+    }
+    
+    const radarData = data.visualization_data.radar_chart;
+    window.clientRadarChart = new Chart(radarCtx, {
+        type: 'radar',
+        data: radarData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 1
+                }
+            }
+        }
+    });
+    
+    // Create bar chart for needs fulfillment
+    const barCtx = document.getElementById('client-bar-chart').getContext('2d');
+    
+    // Clear existing chart
+    if (window.clientBarChart) {
+        window.clientBarChart.destroy();
+    }
+    
+    const barData = data.visualization_data.bar_chart;
+    window.clientBarChart = new Chart(barCtx, {
+        type: 'bar',
+        data: barData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1
+                }
+            }
+        }
+    });
+    
+    // Display insights
+    const insightsList = document.getElementById('client-insights-list');
+    insightsList.innerHTML = '';
+    data.life_segments.insights.forEach(insight => {
+        const li = document.createElement('li');
+        li.textContent = insight;
+        insightsList.appendChild(li);
+    });
+    
+    // Display recommendations
+    const recommendationsDiv = document.getElementById('client-recommendations');
+    recommendationsDiv.innerHTML = '';
+    data.recommendations.forEach(rec => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <h6>${rec.intervention} <span class="badge ${rec.priority}">${rec.priority}</span></h6>
+            <p>${rec.description}</p>
+        `;
+        div.style.marginBottom = '10px';
+        recommendationsDiv.appendChild(div);
+    });
 }
 
 // Initialize dashboard when page loads
